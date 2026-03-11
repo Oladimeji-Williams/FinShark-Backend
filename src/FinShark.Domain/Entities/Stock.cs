@@ -1,0 +1,38 @@
+namespace FinShark.Domain.Entities;
+
+public class Stock : BaseEntity
+{
+    public string Symbol { get; private set; }
+    public string CompanyName { get; private set; }
+    public decimal CurrentPrice { get; private set; }
+    public decimal Purchase { get; private set; }
+    public decimal LastDiv { get; private set; }
+    public string Industry { get; set; } = string.Empty;
+    public decimal MarketCap { get; set; }
+    public List<Comment> Comments { get; set; } = new List<Comment>();
+
+    private Stock() { } // EF Core needs parameterless constructor
+
+    public Stock(string symbol, string companyName, decimal currentPrice, decimal purchase = 0, decimal lastDiv = 0)
+    {
+        if (string.IsNullOrWhiteSpace(symbol)) throw new ArgumentException("Symbol cannot be empty", nameof(symbol));
+        if (string.IsNullOrWhiteSpace(companyName)) throw new ArgumentException("Company name cannot be empty", nameof(companyName));
+        if (currentPrice <= 0) throw new ArgumentException("Current price must be greater than zero", nameof(currentPrice));
+
+        Symbol = symbol;
+        CompanyName = companyName;
+        CurrentPrice = currentPrice;
+        Created = DateTime.UtcNow;
+    }
+
+    public void Update(string? symbol = null, string? companyName = null, decimal? currentPrice = null, 
+        string? industry = null, decimal? marketCap = null)
+    {
+        if (!string.IsNullOrWhiteSpace(symbol)) Symbol = symbol;
+        if (!string.IsNullOrWhiteSpace(companyName)) CompanyName = companyName;
+        if (currentPrice.HasValue && currentPrice.Value > 0) CurrentPrice = currentPrice.Value;
+        if (!string.IsNullOrWhiteSpace(industry)) Industry = industry;
+        if (marketCap.HasValue && marketCap.Value >= 0) MarketCap = marketCap.Value;
+        Modified = DateTime.UtcNow;
+    }
+}

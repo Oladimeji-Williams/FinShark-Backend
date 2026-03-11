@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FinShark.API/FinShark.API.csproj" />
+    <Project Path="src/FinShark.Application/FinShark.Application.csproj" />
+    <Project Path="src/FinShark.Domain/FinShark.Domain.csproj" />
+    <Project Path="src/FinShark.Infrastructure/FinShark.Infrastructure.csproj" />
+    <Project Path="src/FinShark.Persistence/FinShark.Persistence.csproj" />
+  </Folder>
+</Solution>
