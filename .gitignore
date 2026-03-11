@@ -1,0 +1,45 @@
+# Build results
+bin/
+obj/
+dist/
+*.dll
+*.exe
+*.pdb
+
+# Visual Studio / Rider IDE
+.vs/
+.idea/
+*.sln.iml
+*.user
+*.suo
+*.vcxproj.user
+.vscode/
+
+# Environment and Configuration
+.env
+.env.local
+.env.production
+appsettings.Production.json
+appsettings.*.json
+!appsettings.Development.json
+
+# Entity Framework
+*.db
+*.mdf
+*.ldf
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nupkg
+.nuget/
+
+# User Secrets
+secrets.json
+secrets.*.json

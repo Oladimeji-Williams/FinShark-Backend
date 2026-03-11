@@ -1,0 +1,64 @@
+using FinShark.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace FinShark.Persistence.EntityConfigurations;
+
+/// <summary>
+/// Entity type configuration for Stock
+/// Defines database schema and constraints using Fluent API
+/// Separated for clean code organization and maintainability
+/// </summary>
+public static class StockEntityConfiguration
+{
+    /// <summary>
+    /// Configures the Stock entity mapping with the database
+    /// </summary>
+    public static void ConfigureStock(this ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Stock>(entity =>
+        {
+            // Primary Key
+            entity.HasKey(e => e.Id);
+
+            // Symbol Column
+            entity.Property(e => e.Symbol)
+                .IsRequired()
+                .HasMaxLength(10)
+                .HasComment("Stock ticker symbol (e.g., AAPL, MSFT)");
+
+            // Company Name Column
+            entity.Property(e => e.CompanyName)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasComment("Full company name");
+
+            // Current Price Column
+            entity.Property(e => e.CurrentPrice)
+                .HasPrecision(18, 2)
+                .HasComment("Stock price with 2 decimal places");
+
+            // Industry Column
+            entity.Property(e => e.Industry)
+                .HasMaxLength(100)
+                .HasComment("Industry sector");
+
+            // Market Cap Column
+            entity.Property(e => e.MarketCap)
+                .HasMaxLength(100)
+                .HasComment("Market capitalization");
+
+            // Audit Columns
+            entity.Property(e => e.Created)
+                .HasDefaultValueSql("GETUTCDATE()")
+                .HasComment("Record creation timestamp");
+
+            entity.Property(e => e.Modified)
+                .HasComment("Record last update timestamp");
+
+            // Indexes for performance
+            entity.HasIndex(e => e.Symbol)
+                .IsUnique()
+                .HasDatabaseName("IX_Stock_Symbol");
+        });
+    }
+}
