@@ -152,6 +152,143 @@ Expected Response (200 OK):
 }
 ```
 
+## 4A. Test Comment Endpoints
+
+### A. Create a Comment (POST)
+
+```bash
+curl -X POST "https://localhost:5001/api/comments" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "stockId": 1,
+    "title": "Great Investment",
+    "content": "This stock has strong fundamentals and great growth potential over the long term",
+    "rating": 5
+  }'
+```
+
+Expected Response (201 Created):
+```json
+{
+  "success": true,
+  "data": 1,
+  "message": "Comment created successfully"
+}
+```
+
+### B. Get All Comments (GET)
+
+```bash
+curl -X GET "https://localhost:5001/api/comments" \
+  -H "Content-Type: application/json"
+```
+
+Expected Response (200 OK):
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "stockId": 1,
+      "title": "Great Investment",
+      "content": "This stock has strong fundamentals and great growth potential over the long term",
+      "rating": 5,
+      "createdAt": "2026-03-11T14:20:00Z",
+      "updatedAt": null
+    }
+  ],
+  "message": "Comments retrieved successfully"
+}
+```
+
+### C. Get Comment by ID (GET)
+
+```bash
+curl -X GET "https://localhost:5001/api/comments/1" \
+  -H "Content-Type: application/json"
+```
+
+Expected Response (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "stockId": 1,
+    "title": "Great Investment",
+    "content": "This stock has strong fundamentals and great growth potential over the long term",
+    "rating": 5,
+    "createdAt": "2026-03-11T14:20:00Z",
+    "updatedAt": null
+  },
+  "message": "Comment retrieved successfully"
+}
+```
+
+### D. Get Comments by Stock (GET)
+
+```bash
+curl -X GET "https://localhost:5001/api/comments/stock/1" \
+  -H "Content-Type: application/json"
+```
+
+Expected Response (200 OK):
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "stockId": 1,
+      "title": "Great Investment",
+      "content": "This stock has strong fundamentals and great growth potential over the long term",
+      "rating": 5,
+      "createdAt": "2026-03-11T14:20:00Z",
+      "updatedAt": null
+    }
+  ],
+  "message": "Comments retrieved successfully"
+}
+```
+
+### E. Update a Comment (PUT)
+
+```bash
+curl -X PUT "https://localhost:5001/api/comments/1" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Excellent Investment",
+    "content": "Updated: This stock continues to show strong fundamentals and excellent returns",
+    "rating": 5
+  }'
+```
+
+Expected Response (200 OK):
+```json
+{
+  "success": true,
+  "data": true,
+  "message": "Comment updated successfully"
+}
+```
+
+### F. Delete a Comment (DELETE)
+
+```bash
+curl -X DELETE "https://localhost:5001/api/comments/1" \
+  -H "Content-Type: application/json"
+```
+
+Expected Response (200 OK):
+```json
+{
+  "success": true,
+  "data": true,
+  "message": "Comment deleted successfully"
+}
+```
+
 ## 4. Test Error Scenarios
 
 ### Invalid Request (Missing Required Fields)

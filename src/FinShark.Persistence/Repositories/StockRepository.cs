@@ -32,6 +32,38 @@ public sealed class StockRepository(
         }
     }
 
+    public async Task<int> GetCountAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Counting stocks in database");
+            return await _context.Stocks.CountAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error counting stocks");
+            throw;
+        }
+    }
+
+    public async Task<IEnumerable<Stock>> GetAllWithCommentsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Fetching all stocks with comments from database");
+            var stocks = await _context.Stocks
+                .Include(s => s.Comments)
+                .ToListAsync(cancellationToken);
+            _logger.LogInformation("Retrieved {Count} stocks with comments", stocks.Count);
+            return stocks;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving all stocks with comments");
+            throw;
+        }
+    }
+
     public async Task<Stock?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         try
@@ -49,6 +81,29 @@ public sealed class StockRepository(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving stock with ID: {StockId}", id);
+            throw;
+        }
+    }
+
+    public async Task<Stock?> GetByIdWithCommentsAsync(int id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Fetching stock with ID: {StockId} including comments", id);
+            var stock = await _context.Stocks
+                .Include(s => s.Comments)
+                .SingleOrDefaultAsync(s => s.Id == id, cancellationToken);
+
+            if (stock is null)
+            {
+                _logger.LogWarning("Stock with ID {StockId} not found", id);
+            }
+
+            return stock;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving stock with ID: {StockId} including comments", id);
             throw;
         }
     }

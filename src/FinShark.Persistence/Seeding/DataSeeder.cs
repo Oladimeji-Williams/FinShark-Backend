@@ -1,5 +1,5 @@
 using FinShark.Domain.Entities;
-using FinShark.Domain.Enums;
+using FinShark.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 
 namespace FinShark.Persistence.Seeding;
@@ -89,24 +89,35 @@ public sealed class DataSeeder
                 }
             };
 
-            // Attach a comment to first few stocks for demonstration
-            if (stocks.Count > 0)
-            {
-                stocks[0].Comments.Add(new Comment { Title = "First pick", Content = "Great long-term investment" });
-            }
-            if (stocks.Count > 2)
-            {
-                stocks[2].Comments.Add(new Comment { Title = "Watch this", Content = "Volatile but promising" });
-            }
-            if (stocks.Count > 4)
-            {
-                stocks[4].Comments.Add(new Comment { Title = "High risk", Content = "Tesla has big ups and downs" });
-            }
-
             await _context.Stocks.AddRangeAsync(stocks);
             var stocksSaved = await _context.SaveChangesAsync();
 
             _logger.LogInformation("Successfully seeded {Count} stocks into the database", stocksSaved);
+
+            // Add comments after stocks are persisted so StockId values are available.
+            // Ensure every stock has multiple comments.
+            var comments = new List<Comment>();
+            foreach (var stock in stocks)
+            {
+                comments.Add(new Comment(
+                    stock.Id,
+                    $"{stock.Symbol} outlook",
+                    "Baseline view based on current fundamentals.",
+                    Rating.From(4)));
+
+                comments.Add(new Comment(
+                    stock.Id,
+                    $"{stock.Symbol} risk",
+                    "Monitor volatility and macro headwinds.",
+                    Rating.From(3)));
+            }
+
+            if (comments.Count > 0)
+            {
+                await _context.Comments.AddRangeAsync(comments);
+                var commentsSaved = await _context.SaveChangesAsync();
+                _logger.LogInformation("Successfully seeded {Count} comments into the database", commentsSaved);
+            }
         }
         catch (Exception ex)
         {

@@ -25,6 +25,7 @@ public sealed class StockMapper
             CurrentPrice = stock.CurrentPrice,
             Industry = stock.Industry,
             MarketCap = stock.MarketCap,
+            Comments = CommentMapper.ToDtoList(stock.Comments).ToList(),
             Created = stock.Created,
             Modified = stock.Modified
         };

@@ -3,7 +3,7 @@ using FinShark.Application.Dtos;
 using FinShark.Application.Mappers;
 using FinShark.Application.Stocks.Commands.CreateStock;
 using FinShark.Domain.Entities;
-using FinShark.Domain.Enums;
+using FinShark.Domain.ValueObjects;
 using Xunit;
 
 namespace FinShark.Tests.Unit.Mappers;
@@ -22,6 +22,9 @@ public class StockMapperTests
             MarketCap = 2800000000000
         };
         stock.GetType().GetProperty("Id")?.SetValue(stock, 1);
+        stock.Comments.Add(new Comment(stock.Id, "Great stock", "Strong performer", Rating.From(5)));
+        stock.Comments.Add(new Comment(stock.Id, "Solid growth", "Consistent earnings", Rating.From(4)));
+        stock.Comments.Add(new Comment(stock.Id, "Watchlist", "Monitor next quarter", Rating.From(3)));
 
         // Act
         var result = StockMapper.ToDto(stock);
@@ -34,6 +37,10 @@ public class StockMapperTests
         result.CurrentPrice.Should().Be(150.50m);
         result.Industry.Should().Be(IndustryType.Technology);
         result.MarketCap.Should().Be(2800000000000);
+        result.Comments.Should().HaveCount(3);
+        result.Comments[0].Title.Should().Be("Great stock");
+        result.Comments[1].Title.Should().Be("Solid growth");
+        result.Comments[2].Title.Should().Be("Watchlist");
     }
 
     [Fact]

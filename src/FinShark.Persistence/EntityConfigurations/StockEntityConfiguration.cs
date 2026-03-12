@@ -39,12 +39,15 @@ public static class StockEntityConfiguration
 
             // Industry Column
             entity.Property(e => e.Industry)
+                .HasConversion(
+                    industry => industry.Value,
+                    value => FinShark.Domain.ValueObjects.IndustryType.From(value))
                 .HasMaxLength(100)
                 .HasComment("Industry sector");
 
             // Market Cap Column
             entity.Property(e => e.MarketCap)
-                .HasMaxLength(100)
+                .HasPrecision(18, 2)
                 .HasComment("Market capitalization");
 
             // Audit Columns

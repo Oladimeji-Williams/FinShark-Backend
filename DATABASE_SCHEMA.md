@@ -22,8 +22,8 @@ Complete database design, entity relationships, and migrations guide.
 │ CurrentPrice (decimal)              │
 │ Industry (enum)                     │
 │ MarketCap (long)                    │
-│ CreatedAt (DateTime)                │
-│ UpdatedAt (DateTime)                │
+│ Created (DateTime)                  │
+│ Modified (DateTime)                 │
 │ 1 ──────────────────< * │
 │                         │
 │                         │ (Comments)
@@ -34,10 +34,11 @@ Complete database design, entity relationships, and migrations guide.
 │                      ├──────────────────────┤
 │                      │ Id (PK)              │
 │                      │ StockId (FK)         │
-│                      │ Text (string)        │
+│                      │ Title (string)       │
+│                      │ Content (string)     │
 │                      │ Rating (int, 1-5)    │
-│                      │ CreatedAt (DateTime) │
-│                      │ UpdatedAt (DateTime) │
+│                      │ Created (DateTime)   │
+│                      │ Modified (DateTime)  │
 │                      └──────────────────────┘
 │
 └─────────────────────────────────────┘
@@ -112,10 +113,11 @@ Contains user comments and ratings for stocks.
 CREATE TABLE [dbo].[Comments] (
     [Id] INT PRIMARY KEY IDENTITY(1,1),
     [StockId] INT NOT NULL,
-    [Text] NVARCHAR(MAX) NOT NULL,
+    [Title] NVARCHAR(200) NOT NULL,
+    [Content] NVARCHAR(MAX) NOT NULL,
     [Rating] INT NOT NULL,
-    [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    [UpdatedAt] DATETIME2 NULL,
+    [Created] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    [Modified] DATETIME2 NULL,
     
     -- Foreign Key
     CONSTRAINT [FK_Comments_Stocks] 
@@ -125,12 +127,13 @@ CREATE TABLE [dbo].[Comments] (
     
     -- Constraints
     CHECK ([Rating] >= 1 AND [Rating] <= 5),
-    CHECK (LEN([Text]) > 0)
+    CHECK (LEN([Title]) >= 3 AND LEN([Title]) <= 200),
+    CHECK (LEN([Content]) >= 10)
 );
 
 -- Indexes
 CREATE INDEX [IX_Comments_StockId] ON [dbo].[Comments]([StockId]);
-CREATE INDEX [IX_Comments_CreatedAt] ON [dbo].[Comments]([CreatedAt]);
+CREATE INDEX [IX_Comments_Created] ON [dbo].[Comments]([Created]);
 ```
 
 ### Column Definitions
@@ -139,10 +142,11 @@ CREATE INDEX [IX_Comments_CreatedAt] ON [dbo].[Comments]([CreatedAt]);
 |--------|------|------|---------|-------------|
 | Id | int | NO | IDENTITY(1,1) | Primary key |
 | StockId | int | NO | - | Foreign key to Stocks |
-| Text | nvarchar(max) | NO | - | Comment text |
-| Rating | int | NO | - | Rating (1-5) |
-| CreatedAt | datetime2 | NO | GETUTCDATE() | Creation timestamp |
-| UpdatedAt | datetime2 | YES | NULL | Update timestamp |
+| Title | nvarchar(200) | NO | - | Comment title (3-200 chars) |
+| Content | nvarchar(max) | NO | - | Comment content (min 10 chars) |
+| Rating | int | NO | - | Rating (1-5 stars) |
+| Created | datetime2 | NO | GETUTCDATE() | Creation timestamp |
+| Modified | datetime2 | YES | NULL | Last modification timestamp |
 
 ### Sample Data
 
@@ -150,9 +154,9 @@ CREATE INDEX [IX_Comments_CreatedAt] ON [dbo].[Comments]([CreatedAt]);
 SELECT * FROM Comments WHERE StockId = 1;
 
 -- Output:
--- Id | StockId | Text | Rating | CreatedAt | UpdatedAt
--- 1  | 1       | Great company | 5 | 2026-03-11 14:20:00 | NULL
--- 2  | 1       | Strong fundamentals | 4 | 2026-03-11 14:25:00 | NULL
+-- Id | StockId | Title | Content | Rating | Created | Modified
+-- 1  | 1       | Great company | Strong fundamentals and consistent growth | 5 | 2026-03-11 14:20:00 | NULL
+-- 2  | 1       | Watch this stock | Volatile but promising long-term | 4 | 2026-03-11 14:25:00 | NULL
 ```
 
 ---
@@ -256,29 +260,56 @@ public sealed class StockEntityConfiguration : IEntityTypeConfiguration<Stock>
 ### Comment Entity Configuration
 
 ```csharp
-public sealed class CommentEntityConfiguration : IEntityTypeConfiguration<Comment>
+public static class CommentEntityConfiguration
 {
-    public void Configure(EntityTypeBuilder<Comment> builder)
+    public static void ConfigureComment(this ModelBuilder modelBuilder)
     {
-        builder.ToTable("Comments");
+        modelBuilder.Entity<Comment>(entity =>
+        {
+            // Primary Key
+            entity.HasKey(e => e.Id);
 
-        builder.HasKey(c => c.Id);
+            // Properties
+            entity.Property(e => e.StockId)
+                .IsRequired();
 
-        builder.Property(c => c.StockId).IsRequired();
-        builder.Property(c => c.Text).IsRequired();
-        builder.Property(c => c.Rating).IsRequired();
-        builder.Property(c => c.CreatedAt)
-            .HasDefaultValueSql("GETUTCDATE()")
-            .IsRequired();
+            entity.Property(e => e.Title)
+                .IsRequired()
+                .HasMaxLength(200);
 
-        // Foreign key
-        builder.HasOne(c => c.Stock)
-            .WithMany(s => s.Comments)
-            .HasForeignKey(c => c.StockId)
-            .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.Content)
+                .IsRequired()
+                .HasColumnType("nvarchar(max)");
 
-        // Constraints
-        builder.HasCheckConstraint("CK_Comments_Rating", "[Rating] >= 1 AND [Rating] <= 5");
+            entity.Property(e => e.Rating)
+                .IsRequired();
+
+            entity.Property(e => e.Created)
+                .HasDefaultValueSql("GETUTCDATE()")
+                .IsRequired();
+
+            entity.Property(e => e.Modified)
+                .IsRequired(false);
+
+            // Foreign Key Relationship
+            entity.HasOne<Stock>()
+                .WithMany(s => s.Comments)
+                .HasForeignKey(e => e.StockId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Comments_Stocks");
+
+            // Indexes
+            entity.HasIndex(e => e.StockId)
+                .HasDatabaseName("IX_Comment_StockId");
+
+            entity.HasIndex(e => e.Created)
+                .HasDatabaseName("IX_Comment_Created");
+
+            // Check constraints
+            entity.HasCheckConstraint("CK_Comment_Rating", "[Rating] >= 1 AND [Rating] <= 5");
+            entity.HasCheckConstraint("CK_Comment_Title", "LEN([Title]) >= 3 AND LEN([Title]) <= 200");
+            entity.HasCheckConstraint("CK_Comment_Content", "LEN([Content]) >= 10");
+        });
     }
 }
 ```

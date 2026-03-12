@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace FinShark.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -23,7 +23,7 @@ namespace FinShark.Persistence.Migrations
                     Purchase = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     LastDiv = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Industry = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, comment: "Industry sector"),
-                    MarketCap = table.Column<decimal>(type: "decimal(18,2)", maxLength: 100, nullable: false, comment: "Market capitalization"),
+                    MarketCap = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Market capitalization"),
                     Created = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()", comment: "Record creation timestamp"),
                     Modified = table.Column<DateTime>(type: "datetime2", nullable: true, comment: "Record last update timestamp")
                 },
@@ -38,24 +38,32 @@ namespace FinShark.Persistence.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    StockId = table.Column<int>(type: "int", nullable: true),
-                    Created = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Modified = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    StockId = table.Column<int>(type: "int", nullable: false, comment: "Reference to Stock"),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false, comment: "Comment title"),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false, comment: "Comment content"),
+                    Rating = table.Column<int>(type: "int", nullable: false, comment: "Rating from 1 to 5"),
+                    Created = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()", comment: "Record creation timestamp"),
+                    Modified = table.Column<DateTime>(type: "datetime2", nullable: true, comment: "Record last update timestamp")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Comments", x => x.Id);
+                    table.CheckConstraint("CK_Comment_Rating", "[Rating] >= 1 AND [Rating] <= 5");
                     table.ForeignKey(
-                        name: "FK_Comments_Stocks_StockId",
+                        name: "FK_Comments_Stocks",
                         column: x => x.StockId,
                         principalTable: "Stocks",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Comments_StockId",
+                name: "IX_Comment_Created",
+                table: "Comments",
+                column: "Created");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Comment_StockId",
                 table: "Comments",
                 column: "StockId");
 

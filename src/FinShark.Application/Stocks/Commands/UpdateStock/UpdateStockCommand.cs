@@ -1,5 +1,5 @@
 using MediatR;
-using FinShark.Domain.Enums;
+using FinShark.Domain.ValueObjects;
 
 namespace FinShark.Application.Stocks.Commands.UpdateStock;
 

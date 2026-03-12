@@ -15,23 +15,38 @@ public static class CorsConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var allowedOrigins = configuration["Cors:AllowedOrigins"]?.Split(',') 
-            ?? new[] { "*" };
+        var allowedOrigins = configuration["Cors:AllowedOrigins"]?
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            ?? Array.Empty<string>();
+        var allowAnyOrigin = allowedOrigins.Length == 0 || allowedOrigins.Contains("*");
+        var allowCredentials = configuration["Cors:AllowCredentials"]?.ToLower() == "true";
 
         services.AddCors(options =>
         {
             options.AddPolicy("AllowConfigured", policy =>
             {
-                var method = configuration["Cors:AllowAllMethods"]?.ToLower() == "true" 
-                    ? policy.AllowAnyMethod() 
-                    : policy.WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
+                var builder = policy;
 
-                var headers = configuration["Cors:AllowAllHeaders"]?.ToLower() == "true"
-                    ? method.AllowAnyHeader()
-                    : method.WithHeaders("Content-Type", "Authorization");
+                if (allowAnyOrigin)
+                {
+                    builder = builder.AllowAnyOrigin();
+                }
+                else
+                {
+                    builder = builder.WithOrigins(allowedOrigins);
+                    if (allowCredentials)
+                    {
+                        builder = builder.AllowCredentials();
+                    }
+                }
 
-                policy.WithOrigins(allowedOrigins)
-                    .AllowCredentials();
+                builder = configuration["Cors:AllowAllMethods"]?.ToLower() == "true"
+                    ? builder.AllowAnyMethod()
+                    : builder.WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
+
+                _ = configuration["Cors:AllowAllHeaders"]?.ToLower() == "true"
+                    ? builder.AllowAnyHeader()
+                    : builder.WithHeaders("Content-Type", "Authorization");
             });
         });
 

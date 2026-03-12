@@ -34,7 +34,7 @@ public sealed class GetStocksQueryHandler : IRequestHandler<GetStocksQuery, IEnu
 
         try
         {
-            var stocks = await _stockRepository.GetAllAsync(cancellationToken);
+            var stocks = await _stockRepository.GetAllWithCommentsAsync(cancellationToken);
             var stockDtos = StockMapper.ToDtoList(stocks);
 
             _logger.LogInformation("Retrieved {Count} stocks", stocks.Count());

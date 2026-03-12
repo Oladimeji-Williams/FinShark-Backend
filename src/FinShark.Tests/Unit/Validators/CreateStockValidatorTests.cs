@@ -1,7 +1,7 @@
 using FluentAssertions;
 using FinShark.Application.Dtos;
 using FinShark.Application.Stocks.Validators;
-using FinShark.Domain.Enums;
+using FinShark.Domain.ValueObjects;
 using Xunit;
 
 namespace FinShark.Tests.Unit.Validators;
