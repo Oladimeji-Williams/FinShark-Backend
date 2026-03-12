@@ -68,6 +68,19 @@ builder.Logging.AddApplicationLogging(builder.Configuration);
 var app = builder.Build();
 
 // ============================================
+// Database Seeding (if --seed flag is provided)
+// ============================================
+
+if (args.Contains("--seed"))
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<FinShark.Persistence.Seeding.DataSeeder>();
+        await seeder.SeedAsync();
+    }
+}
+
+// ============================================
 // HTTP Pipeline Configuration
 // ============================================
 

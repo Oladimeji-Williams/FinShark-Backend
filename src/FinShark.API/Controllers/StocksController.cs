@@ -4,11 +4,9 @@ using FinShark.Application.Stocks.Commands.DeleteStock;
 using FinShark.Application.Stocks.Commands.UpdateStock;
 using FinShark.Application.Stocks.Queries.GetStocks;
 using FinShark.Application.Stocks.Queries.GetStockById;
-using FinShark.Application.Stocks.Validators;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace FinShark.API.Controllers;
 
