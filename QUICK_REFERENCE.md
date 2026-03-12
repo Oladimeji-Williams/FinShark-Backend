@@ -495,6 +495,27 @@ public sealed class MyEntityMapper
 | Migration fails | Check DbContext configuration |
 | DI container error | Register in ServiceCollectionExtensions |
 
+### API Quick Reference
+
+#### Stock Endpoints
+```
+POST   /api/stocks              → Create stock
+GET    /api/stocks              → Get all stocks
+GET    /api/stocks/{id}         → Get stock by ID
+PUT    /api/stocks/{id}         → Update stock
+DELETE /api/stocks/{id}         → Delete stock
+```
+
+#### Comment Endpoints
+```
+POST   /api/comments              → Create comment
+GET    /api/comments              → Get all comments
+GET    /api/comments/{id}         → Get comment by ID
+GET    /api/comments/stock/{id}   → Get comments for stock
+PUT    /api/comments/{id}         → Update comment
+DELETE /api/comments/{id}         → Delete comment
+```
+
 ### Code Style Guidelines
 
 - Use `sealed` for non-abstract classes

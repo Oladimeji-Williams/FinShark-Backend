@@ -1,6 +1,6 @@
 namespace FinShark.Domain.Entities;
 
-using FinShark.Domain.Enums;
+using FinShark.Domain.ValueObjects;
 
 public class Stock : BaseEntity
 {

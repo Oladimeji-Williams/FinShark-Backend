@@ -304,6 +304,305 @@ curl -X DELETE "https://localhost:5001/api/stocks/1" \
 
 ---
 
+## Comment Endpoints
+
+### 1. Create Comment
+
+Creates a new comment on a stock.
+
+**Endpoint**: `POST /api/comments`
+
+**Request Headers**:
+```
+Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "stockId": 1,
+  "title": "Great Investment",
+  "content": "This stock has strong fundamentals and great growth potential",
+  "rating": 5
+}
+```
+
+**Response (201 Created)**:
+```json
+{
+  "success": true,
+  "data": 1,
+  "message": "Comment created successfully",
+  "errors": null
+}
+```
+
+**Response (400 Bad Request)**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": [
+    "Stock ID must be greater than 0",
+    "Title is required and must be 3-200 characters",
+    "Content must be 10-5000 characters",
+    "Rating must be between 1 and 5"
+  ]
+}
+```
+
+**Response (404 Not Found)**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["Stock with ID 999 not found"]
+}
+```
+
+**Example cURL**:
+```bash
+curl -X POST "https://localhost:5001/api/comments" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "stockId": 1,
+    "title": "Great Investment",
+    "content": "This stock has strong fundamentals and great growth potential",
+    "rating": 5
+  }'
+```
+
+---
+
+### 2. Get All Comments
+
+Retrieves all comments with optional pagination.
+
+**Endpoint**: `GET /api/comments`
+
+**Query Parameters**:
+- `pageNumber` (int, optional): Page number (default: 1)
+- `pageSize` (int, optional): Items per page (default: 10, max: 100)
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "stockId": 1,
+      "title": "Great Investment",
+      "content": "This stock has strong fundamentals and great growth potential",
+      "rating": 5,
+      "createdAt": "2026-03-11T14:20:00Z",
+      "updatedAt": null
+    }
+  ],
+  "message": "Comments retrieved successfully",
+  "errors": null
+}
+```
+
+**Example cURL**:
+```bash
+curl -X GET "https://localhost:5001/api/comments" \
+  -H "Content-Type: application/json"
+```
+
+---
+
+### 3. Get Comment by ID
+
+Retrieves a specific comment by its ID.
+
+**Endpoint**: `GET /api/comments/{id}`
+
+**Path Parameters**:
+- `id` (int, required): Comment ID
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "stockId": 1,
+    "title": "Great Investment",
+    "content": "This stock has strong fundamentals and great growth potential",
+    "rating": 5,
+    "createdAt": "2026-03-11T14:20:00Z",
+    "updatedAt": null
+  },
+  "message": "Comment retrieved successfully",
+  "errors": null
+}
+```
+
+**Response (404 Not Found)**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["Comment with ID 999 not found"]
+}
+```
+
+**Example cURL**:
+```bash
+curl -X GET "https://localhost:5001/api/comments/1" \
+  -H "Content-Type: application/json"
+```
+
+---
+
+### 4. Get Comments by Stock ID
+
+Retrieves all comments for a specific stock.
+
+**Endpoint**: `GET /api/comments/stock/{stockId}`
+
+**Path Parameters**:
+- `stockId` (int, required): Stock ID
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "stockId": 1,
+      "title": "Great Investment",
+      "content": "This stock has strong fundamentals and great growth potential",
+      "rating": 5,
+      "createdAt": "2026-03-11T14:20:00Z",
+      "updatedAt": null
+    },
+    {
+      "id": 2,
+      "stockId": 1,
+      "title": "Strong Performer",
+      "content": "Consistent returns over the past 5 years",
+      "rating": 4,
+      "createdAt": "2026-03-11T14:25:00Z",
+      "updatedAt": null
+    }
+  ],
+  "message": "Comments retrieved successfully",
+  "errors": null
+}
+```
+
+**Response (404 Not Found)**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["Stock with ID 999 not found"]
+}
+```
+
+**Example cURL**:
+```bash
+curl -X GET "https://localhost:5001/api/comments/stock/1" \
+  -H "Content-Type: application/json"
+```
+
+---
+
+### 5. Update Comment
+
+Updates an existing comment.
+
+**Endpoint**: `PUT /api/comments/{id}`
+
+**Path Parameters**:
+- `id` (int, required): Comment ID
+
+**Request Body**:
+```json
+{
+  "title": "Excellent Investment",
+  "content": "Updated: This stock continues to show strong fundamentals",
+  "rating": 5
+}
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": true,
+  "message": "Comment updated successfully",
+  "errors": null
+}
+```
+
+**Response (404 Not Found)**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["Comment with ID 999 not found"]
+}
+```
+
+**Example cURL**:
+```bash
+curl -X PUT "https://localhost:5001/api/comments/1" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Excellent Investment",
+    "content": "Updated: This stock continues to show strong fundamentals",
+    "rating": 5
+  }'
+```
+
+---
+
+### 6. Delete Comment
+
+Deletes a comment.
+
+**Endpoint**: `DELETE /api/comments/{id}`
+
+**Path Parameters**:
+- `id` (int, required): Comment ID
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": true,
+  "message": "Comment deleted successfully",
+  "errors": null
+}
+```
+
+**Response (404 Not Found)**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["Comment with ID 999 not found"]
+}
+```
+
+**Example cURL**:
+```bash
+curl -X DELETE "https://localhost:5001/api/comments/1" \
+  -H "Content-Type: application/json"
+```
+
+---
+
 ## Response Format
 
 All API responses follow a standardized format:

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FinShark.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260311204013_init")]
-    partial class init
+    [Migration("20260312200847_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -35,26 +35,45 @@ namespace FinShark.Persistence.Migrations
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasComment("Comment content");
 
                     b.Property<DateTime>("Created")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()")
+                        .HasComment("Record creation timestamp");
 
                     b.Property<DateTime?>("Modified")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasComment("Record last update timestamp");
 
-                    b.Property<int?>("StockId")
-                        .HasColumnType("int");
+                    b.Property<int>("Rating")
+                        .HasColumnType("int")
+                        .HasComment("Rating from 1 to 5");
+
+                    b.Property<int>("StockId")
+                        .HasColumnType("int")
+                        .HasComment("Reference to Stock");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasComment("Comment title");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StockId");
+                    b.HasIndex("Created")
+                        .HasDatabaseName("IX_Comment_Created");
 
-                    b.ToTable("Comments");
+                    b.HasIndex("StockId")
+                        .HasDatabaseName("IX_Comment_StockId");
+
+                    b.ToTable("Comments", t =>
+                        {
+                            t.HasCheckConstraint("CK_Comment_Rating", "[Rating] >= 1 AND [Rating] <= 5");
+                        });
                 });
 
             modelBuilder.Entity("FinShark.Domain.Entities.Stock", b =>
@@ -92,7 +111,7 @@ namespace FinShark.Persistence.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("MarketCap")
-                        .HasMaxLength(100)
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)")
                         .HasComment("Market capitalization");
 
@@ -122,7 +141,10 @@ namespace FinShark.Persistence.Migrations
                 {
                     b.HasOne("FinShark.Domain.Entities.Stock", "Stock")
                         .WithMany("Comments")
-                        .HasForeignKey("StockId");
+                        .HasForeignKey("StockId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_Comments_Stocks");
 
                     b.Navigation("Stock");
                 });

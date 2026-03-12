@@ -7,7 +7,7 @@ using FinShark.Domain.Entities;
 using FinShark.Domain.Repositories;
 using FinShark.Persistence;
 using FinShark.Persistence.Repositories;
-using FinShark.Domain.Enums;
+using FinShark.Domain.ValueObjects;
 using Xunit;
 using MediatR;
 
@@ -176,5 +176,5 @@ public class MockLogger<T> : Microsoft.Extensions.Logging.ILogger<T>
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
     public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => false;
     public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId,
-        TState state, Exception? exception, Func<TState, Exception?, string> formatter) where TState : notnull { }
+        TState state, Exception? exception, Func<TState, Exception?, string> formatter) { }
 }

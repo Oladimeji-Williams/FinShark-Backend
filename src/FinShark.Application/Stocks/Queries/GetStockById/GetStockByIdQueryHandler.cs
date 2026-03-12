@@ -29,7 +29,7 @@ public sealed class GetStockByIdQueryHandler : IRequestHandler<GetStockByIdQuery
 
         _logger.LogInformation("Retrieving stock with ID: {StockId}", request.Id);
 
-        var stock = await _stockRepository.GetByIdAsync(request.Id, cancellationToken);
+        var stock = await _stockRepository.GetByIdWithCommentsAsync(request.Id, cancellationToken);
 
         if (stock == null)
         {

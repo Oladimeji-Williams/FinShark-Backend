@@ -42,6 +42,7 @@ public static class ServiceCollectionExtensions
 
         // Register repositories
         services.AddScoped<IStockRepository, StockRepository>();
+        services.AddScoped<ICommentRepository, CommentRepository>();
 
         // Register data seeder
         services.AddScoped<DataSeeder>();

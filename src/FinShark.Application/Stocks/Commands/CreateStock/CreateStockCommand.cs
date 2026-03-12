@@ -1,6 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using FinShark.Application.Dtos;
-using FinShark.Domain.Enums;
+using FinShark.Domain.ValueObjects;
 
 namespace FinShark.Application.Stocks.Commands.CreateStock;
 
@@ -12,6 +12,6 @@ public sealed record CreateStockCommand(
     string Symbol,
     string CompanyName,
     decimal CurrentPrice,
-    IndustryType Industry = IndustryType.Other,
+    IndustryType Industry = default,
     decimal MarketCap = 0
 ) : IRequest<CreateStockResponseDto>;

@@ -188,6 +188,94 @@ public sealed class UpdateStockValidator : AbstractValidator<UpdateStockCommand>
 
 ---
 
+## Comment Validation Rules
+
+### Create Comment Validator
+
+```csharp
+// FinShark.Application/Comments/Validators/CreateCommentValidator.cs
+using FinShark.Application.Comments.Commands.CreateComment;
+using FinShark.Domain.Repositories;
+using FluentValidation;
+
+namespace FinShark.Application.Comments.Validators;
+
+public sealed class CreateCommentValidator : AbstractValidator<CreateCommentCommand>
+{
+    private readonly IStockRepository _stockRepository;
+
+    public CreateCommentValidator(IStockRepository stockRepository)
+    {
+        _stockRepository = stockRepository;
+
+        // Stock ID validation
+        RuleFor(x => x.StockId)
+            .NotEmpty().WithMessage("Stock ID is required")
+            .GreaterThan(0).WithMessage("Stock ID must be greater than 0")
+            .MustAsync(StockExists).WithMessage("Stock with this ID does not exist");
+
+        // Title validation
+        RuleFor(x => x.Title)
+            .NotEmpty().WithMessage("Title is required")
+            .Length(3, 200).WithMessage("Title must be 3-200 characters long");
+
+        // Content validation
+        RuleFor(x => x.Content)
+            .NotEmpty().WithMessage("Content is required")
+            .Length(10, 5000).WithMessage("Content must be 10-5000 characters long");
+
+        // Rating validation
+        RuleFor(x => x.Rating)
+            .NotEmpty().WithMessage("Rating is required")
+            .InclusiveBetween(1, 5).WithMessage("Rating must be between 1 and 5");
+    }
+
+    private async Task<bool> StockExists(int stockId, CancellationToken ct)
+    {
+        var stock = await _stockRepository.GetByIdAsync(stockId);
+        return stock != null;
+    }
+}
+```
+
+### Update Comment Validator
+
+```csharp
+// FinShark.Application/Comments/Validators/UpdateCommentValidator.cs
+using FinShark.Application.Comments.Commands.UpdateComment;
+using FluentValidation;
+
+namespace FinShark.Application.Comments.Validators;
+
+public sealed class UpdateCommentValidator : AbstractValidator<UpdateCommentCommand>
+{
+    public UpdateCommentValidator()
+    {
+        // Comment ID validation
+        RuleFor(x => x.Id)
+            .NotEmpty().WithMessage("Comment ID is required")
+            .GreaterThan(0).WithMessage("Comment ID must be greater than 0");
+
+        // Title validation
+        RuleFor(x => x.Title)
+            .NotEmpty().WithMessage("Title is required")
+            .Length(3, 200).WithMessage("Title must be 3-200 characters long");
+
+        // Content validation
+        RuleFor(x => x.Content)
+            .NotEmpty().WithMessage("Content is required")
+            .Length(10, 5000).WithMessage("Content must be 10-5000 characters long");
+
+        // Rating validation
+        RuleFor(x => x.Rating)
+            .NotEmpty().WithMessage("Rating is required")
+            .InclusiveBetween(1, 5).WithMessage("Rating must be between 1 and 5");
+    }
+}
+```
+
+---
+
 ## Validation Rule Types
 
 ### 1. Required Field Validation

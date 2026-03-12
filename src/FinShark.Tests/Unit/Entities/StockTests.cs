@@ -1,6 +1,6 @@
 using FluentAssertions;
 using FinShark.Domain.Entities;
-using FinShark.Domain.Enums;
+using FinShark.Domain.ValueObjects;
 using Xunit;
 
 namespace FinShark.Tests.Unit.Entities;
@@ -243,7 +243,7 @@ public class StockTests
     {
         // Arrange
         var stock = new Stock("AAPL", "Apple Inc.", 150.50m);
-        var comment = new Comment { Title = "Great stock", Content = "Strong performer", Stock = stock };
+        var comment = new Comment(stock.Id, "Great stock", "Strong performer", Rating.From(5));
 
         // Act
         stock.Comments.Add(comment);

@@ -98,6 +98,32 @@ public class GetStockByIdQueryHandler : IRequestHandler<GetStockByIdQuery, Stock
 }
 ```
 
+**Comment Not Found Example**:
+```csharp
+public class GetCommentByIdQueryHandler : IRequestHandler<GetCommentByIdQuery, CommentDto>
+{
+    private readonly ICommentRepository _repository;
+
+    public async Task<CommentDto> Handle(GetCommentByIdQuery request, CancellationToken ct)
+    {
+        var comment = await _repository.GetByIdAsync(request.Id);
+        
+        if (comment == null)
+            throw new CommentNotFoundException($"Comment with ID {request.Id} not found");
+        
+        return CommentMapper.ToDto(comment);
+    }
+}
+
+// Response:
+{
+  "success": false,
+  "data": null,
+  "errors": ["Comment with ID 999 not found"],
+  "message": null
+}
+```
+
 ### 3. Conflict Exceptions
 
 **When**: Business rule violation

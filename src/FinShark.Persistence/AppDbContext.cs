@@ -20,6 +20,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
         // Configure entities using dedicated configuration classes
         modelBuilder.ConfigureStock();
+        modelBuilder.ConfigureComment();
     }
 
     /// <summary>

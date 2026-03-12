@@ -1,9 +1,12 @@
 using FinShark.Application;
 using FinShark.API.Configuration;
+using FinShark.API.Serialization;
 using FinShark.Infrastructure;
 using FinShark.Persistence;
 using DotNetEnv;
 using Serilog;
+using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json.Serialization;
 
 // ============================================
 // Serilog Configuration
@@ -77,7 +80,13 @@ builder.Services.AddPersistenceServices(builder.Configuration);
 // API Layer Services - Completely Separated Configuration
 builder.Services.AddCorsConfiguration(builder.Configuration);
 builder.Services.AddOpenApiConfiguration();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddNewtonsoftJson(options =>
+    {
+        options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+        options.SerializerSettings.Converters.Add(new IndustryTypeJsonConverter());
+        options.SerializerSettings.Converters.Add(new RatingJsonConverter());
+    });
 
 // ============================================
 // Build Application
@@ -113,6 +122,10 @@ app
 // ============================================
 
 app.Run();
+}
+catch (HostAbortedException)
+{
+    // EF Core tools intentionally abort the host after design-time services are resolved.
 }
 catch (Exception ex)
 {
