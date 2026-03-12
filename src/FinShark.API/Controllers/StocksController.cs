@@ -44,14 +44,14 @@ public sealed class StocksController : ControllerBase
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<IEnumerable<StockDto>>>> GetAllStocks(CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<IEnumerable<GetStockResponseDto>>>> GetAllStocks(CancellationToken cancellationToken)
     {
         _logger.LogInformation("GET /api/stocks - Retrieving all stocks");
 
         try
         {
             var result = await _mediator.Send(new GetStocksQuery(), cancellationToken);
-            var response = ApiResponse<IEnumerable<StockDto>>.SuccessResponse(result, "Stocks retrieved successfully");
+            var response = ApiResponse<IEnumerable<GetStockResponseDto>>.SuccessResponse(result, "Stocks retrieved successfully");
             return Ok(response);
         }
         catch (Exception ex)
@@ -65,12 +65,13 @@ public sealed class StocksController : ControllerBase
     /// Create a new stock
     /// </summary>
     /// <param name="request">Stock creation request data</param>
-    /// <returns>Created stock ID</returns>
+    /// <returns>Created stock with ID</returns>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<int>>> CreateStock(
+    public async Task<ActionResult<ApiResponse<CreateStockResponseDto>>> CreateStock(
         [FromBody] CreateStockRequestDto request,
         CancellationToken cancellationToken)
     {
@@ -83,7 +84,7 @@ public sealed class StocksController : ControllerBase
         if (!validationResult.IsValid)
         {
             var errors = validationResult.Errors.Select(e => e.ErrorMessage);
-            var errorResponse = ApiResponse<int>.FailureResponse(errors);
+            var errorResponse = ApiResponse<CreateStockResponseDto>.FailureResponse(errors);
             return BadRequest(errorResponse);
         }
 
@@ -98,10 +99,16 @@ public sealed class StocksController : ControllerBase
                 request.MarketCap
             );
 
-            var stockId = await _mediator.Send(command, cancellationToken);
+            var result = await _mediator.Send(command, cancellationToken);
 
-            var response = ApiResponse<int>.SuccessResponse(stockId, "Stock created successfully");
-            return CreatedAtAction(nameof(GetAllStocks), new { id = stockId }, response);
+            var response = ApiResponse<CreateStockResponseDto>.SuccessResponse(result, "Stock created successfully");
+            return CreatedAtAction(nameof(GetStockById), new { id = result.Id }, response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Duplicate stock symbol: {Symbol}", request.Symbol);
+            var errorResponse = ApiResponse<CreateStockResponseDto>.FailureResponse(ex.Message);
+            return Conflict(errorResponse);
         }
         catch (Exception ex)
         {
@@ -119,24 +126,24 @@ public sealed class StocksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<StockDto>>> GetStockById(
+    public async Task<ActionResult<ApiResponse<GetStockResponseDto>>> GetStockById(
         int id,
         CancellationToken cancellationToken)
     {
-        if (id <= 0) return BadRequest(ApiResponse<StockDto>.FailureResponse("Invalid stock ID"));
+        if (id <= 0) return BadRequest(ApiResponse<GetStockResponseDto>.FailureResponse("Invalid stock ID"));
 
         _logger.LogInformation("GET /api/stocks/{Id} - Retrieving stock with ID: {StockId}", id, id);
 
         try
         {
             var result = await _mediator.Send(new GetStockByIdQuery(id), cancellationToken);
-            var response = ApiResponse<StockDto>.SuccessResponse(result, "Stock retrieved successfully");
+            var response = ApiResponse<GetStockResponseDto>.SuccessResponse(result, "Stock retrieved successfully");
             return Ok(response);
         }
         catch (KeyNotFoundException ex)
         {
             _logger.LogWarning(ex, "Stock not found with ID: {StockId}", id);
-            var errorResponse = ApiResponse<StockDto>.FailureResponse(ex.Message);
+            var errorResponse = ApiResponse<GetStockResponseDto>.FailureResponse(ex.Message);
             return NotFound(errorResponse);
         }
         catch (Exception ex)
@@ -150,9 +157,9 @@ public sealed class StocksController : ControllerBase
     /// Update an existing stock
     /// </summary>
     /// <param name="id">Stock ID to update</param>
-    /// <param name="request">Stock update data</param>
+    /// <param name="request">Stock update data - only provided fields will be updated</param>
     /// <returns>Success response</returns>
-    [HttpPut("{id}")]
+    [HttpPatch("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -165,7 +172,7 @@ public sealed class StocksController : ControllerBase
         if (id <= 0) return BadRequest(ApiResponse<bool>.FailureResponse("Invalid stock ID"));
         if (request == null) throw new ArgumentNullException(nameof(request));
 
-        _logger.LogInformation("PUT /api/stocks/{Id} - Updating stock with ID: {StockId}, Symbol: {Symbol}", id, id, request.Symbol);
+        _logger.LogInformation("PATCH /api/stocks/{Id} - Updating stock with ID: {StockId}", id, id);
 
         // Validate request DTO
         var validationResult = await _updateStockValidator.ValidateAsync(request, cancellationToken);
@@ -180,12 +187,12 @@ public sealed class StocksController : ControllerBase
         {
             // Convert DTO to Command for MediatR
             var command = new UpdateStockCommand(
-                id,
-                request.Symbol,
-                request.CompanyName,
-                request.CurrentPrice,
-                request.Industry,
-                request.MarketCap
+                Id: id,
+                Symbol: request.Symbol,
+                CompanyName: request.CompanyName,
+                CurrentPrice: request.CurrentPrice,
+                Industry: request.Industry,
+                MarketCap: request.MarketCap
             );
 
             var result = await _mediator.Send(command, cancellationToken);
