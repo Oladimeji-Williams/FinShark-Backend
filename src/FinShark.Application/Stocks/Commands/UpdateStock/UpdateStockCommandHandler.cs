@@ -38,13 +38,14 @@ public sealed class UpdateStockCommandHandler : IRequestHandler<UpdateStockComma
 
         try
         {
-            // Update the stock properties
+            // Update entity directly from command (supports partial updates)
             existingStock.Update(
                 symbol: request.Symbol,
                 companyName: request.CompanyName,
                 currentPrice: request.CurrentPrice,
                 industry: request.Industry,
-                marketCap: request.MarketCap);
+                marketCap: request.MarketCap
+            );
 
             // Persist changes
             await _stockRepository.UpdateAsync(existingStock, cancellationToken);

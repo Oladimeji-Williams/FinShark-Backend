@@ -11,7 +11,7 @@ namespace FinShark.Application.Stocks.Queries.GetStocks;
 /// Implements CQRS pattern - processes read-only operations
 /// Uses manual mapper for explicit control over DTO construction
 /// </summary>
-public sealed class GetStocksQueryHandler : IRequestHandler<GetStocksQuery, IEnumerable<StockDto>>
+public sealed class GetStocksQueryHandler : IRequestHandler<GetStocksQuery, IEnumerable<GetStockResponseDto>>
 {
     private readonly IStockRepository _stockRepository;
     private readonly ILogger<GetStocksQueryHandler> _logger;
@@ -24,7 +24,7 @@ public sealed class GetStocksQueryHandler : IRequestHandler<GetStocksQuery, IEnu
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<IEnumerable<StockDto>> Handle(
+    public async Task<IEnumerable<GetStockResponseDto>> Handle(
         GetStocksQuery request,
         CancellationToken cancellationToken)
     {

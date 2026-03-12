@@ -29,6 +29,11 @@ public interface IStockRepository
     Task DeleteAsync(Stock stock, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Retrieves a stock by its symbol
+    /// </summary>
+    Task<Stock?> GetBySymbolAsync(string symbol, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Updates an existing stock in the database
     /// </summary>
     Task UpdateAsync(Stock stock, CancellationToken cancellationToken = default);
