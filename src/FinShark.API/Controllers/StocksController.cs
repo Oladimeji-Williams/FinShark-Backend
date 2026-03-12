@@ -72,15 +72,15 @@ public sealed class StocksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<CreateStockResponseDto>>> CreateStock(
-        [FromBody] CreateStockRequestDto request,
+        [FromBody] CreateStockRequestDto createStockRequestDto,
         CancellationToken cancellationToken)
     {
-        if (request == null) throw new ArgumentNullException(nameof(request));
+        if (createStockRequestDto == null) throw new ArgumentNullException(nameof(createStockRequestDto));
 
-        _logger.LogInformation("POST /api/stocks - Creating new stock: {Symbol}", request.Symbol);
+        _logger.LogInformation("POST /api/stocks - Creating new stock: {Symbol}", createStockRequestDto.Symbol);
 
         // Validate request DTO
-        var validationResult = await _createStockValidator.ValidateAsync(request, cancellationToken);
+        var validationResult = await _createStockValidator.ValidateAsync(createStockRequestDto, cancellationToken);
         if (!validationResult.IsValid)
         {
             var errors = validationResult.Errors.Select(e => e.ErrorMessage);
@@ -92,11 +92,11 @@ public sealed class StocksController : ControllerBase
         {
             // Convert DTO to Command for MediatR
             var command = new CreateStockCommand(
-                request.Symbol,
-                request.CompanyName,
-                request.CurrentPrice,
-                request.Industry,
-                request.MarketCap
+                createStockRequestDto.Symbol,
+                createStockRequestDto.CompanyName,
+                createStockRequestDto.CurrentPrice,
+                createStockRequestDto.Industry,
+                createStockRequestDto.MarketCap
             );
 
             var result = await _mediator.Send(command, cancellationToken);
@@ -106,7 +106,7 @@ public sealed class StocksController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Duplicate stock symbol: {Symbol}", request.Symbol);
+            _logger.LogWarning(ex, "Duplicate stock symbol: {Symbol}", createStockRequestDto.Symbol);
             var errorResponse = ApiResponse<CreateStockResponseDto>.FailureResponse(ex.Message);
             return Conflict(errorResponse);
         }
@@ -166,16 +166,16 @@ public sealed class StocksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<bool>>> UpdateStock(
         int id,
-        [FromBody] UpdateStockRequestDto request,
+        [FromBody] UpdateStockRequestDto updateStockRequestDto,
         CancellationToken cancellationToken)
     {
         if (id <= 0) return BadRequest(ApiResponse<bool>.FailureResponse("Invalid stock ID"));
-        if (request == null) throw new ArgumentNullException(nameof(request));
+        if (updateStockRequestDto == null) throw new ArgumentNullException(nameof(updateStockRequestDto));
 
         _logger.LogInformation("PATCH /api/stocks/{Id} - Updating stock with ID: {StockId}", id, id);
 
         // Validate request DTO
-        var validationResult = await _updateStockValidator.ValidateAsync(request, cancellationToken);
+        var validationResult = await _updateStockValidator.ValidateAsync(updateStockRequestDto, cancellationToken);
         if (!validationResult.IsValid)
         {
             var errors = validationResult.Errors.Select(e => e.ErrorMessage);
@@ -188,11 +188,11 @@ public sealed class StocksController : ControllerBase
             // Convert DTO to Command for MediatR
             var command = new UpdateStockCommand(
                 Id: id,
-                Symbol: request.Symbol,
-                CompanyName: request.CompanyName,
-                CurrentPrice: request.CurrentPrice,
-                Industry: request.Industry,
-                MarketCap: request.MarketCap
+                Symbol: updateStockRequestDto.Symbol,
+                CompanyName: updateStockRequestDto.CompanyName,
+                CurrentPrice: updateStockRequestDto.CurrentPrice,
+                Industry: updateStockRequestDto.Industry,
+                MarketCap: updateStockRequestDto.MarketCap
             );
 
             var result = await _mediator.Send(command, cancellationToken);

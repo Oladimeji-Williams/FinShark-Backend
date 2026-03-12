@@ -3,6 +3,24 @@ using FinShark.API.Configuration;
 using FinShark.Infrastructure;
 using FinShark.Persistence;
 using DotNetEnv;
+using Serilog;
+
+// ============================================
+// Serilog Configuration
+// ============================================
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .WriteTo.File(
+        path: "logs/finshark-.txt",
+        rollingInterval: RollingInterval.Day,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
+
+try
+{
+    Log.Information("FinShark application starting up");
 
 // ============================================
 // Configuration Builder Setup
@@ -36,6 +54,9 @@ if (!Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?.Equals("Produ
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Serilog as the logging provider
+builder.Host.UseSerilog();
+
 // ASP.NET Core automatically loads:
 // - appsettings.json
 // - appsettings.{Environment}.json
@@ -57,9 +78,6 @@ builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddCorsConfiguration(builder.Configuration);
 builder.Services.AddOpenApiConfiguration();
 builder.Services.AddControllers();
-
-// Logging Configuration - Separated and Environment-Aware
-builder.Logging.AddApplicationLogging(builder.Configuration);
 
 // ============================================
 // Build Application
@@ -95,5 +113,14 @@ app
 // ============================================
 
 app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 
