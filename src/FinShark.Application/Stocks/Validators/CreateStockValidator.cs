@@ -16,8 +16,8 @@ public sealed class CreateStockValidator : AbstractValidator<CreateStockRequestD
                 .WithMessage("Stock symbol is required.")
             .MaximumLength(10)
                 .WithMessage("Stock symbol cannot exceed 10 characters.")
-            .Matches(@"^[A-Z0-9]+$")
-                .WithMessage("Stock symbol must contain only uppercase letters and numbers.");
+            .Matches(@"^[A-Z0-9.]+$")
+                .WithMessage("Stock symbol must contain only uppercase letters, numbers, and dots (e.g., AB.C).");
 
         RuleFor(x => x.CompanyName)
             .NotEmpty()
@@ -31,9 +31,8 @@ public sealed class CreateStockValidator : AbstractValidator<CreateStockRequestD
             .LessThanOrEqualTo(decimal.MaxValue)
                 .WithMessage("Current price is too large.");
 
-        RuleFor(x => x.Industry)
-            .MaximumLength(100)
-                .WithMessage("Industry cannot exceed 100 characters.");
+        // Industry is an enum - validation is automatic via JSON deserialization
+        // No additional validation needed
 
         RuleFor(x => x.MarketCap)
             .GreaterThanOrEqualTo(0)

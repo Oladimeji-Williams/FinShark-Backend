@@ -9,18 +9,12 @@ namespace FinShark.Persistence.Repositories;
 /// Repository implementation for Stock entity
 /// Handles database operations with logging and error handling
 /// </summary>
-public sealed class StockRepository : IStockRepository
+public sealed class StockRepository(
+    AppDbContext appDbContext,
+    ILogger<StockRepository> logger) : IStockRepository
 {
-    private readonly AppDbContext _context;
-    private readonly ILogger<StockRepository> _logger;
-
-    public StockRepository(
-        AppDbContext context,
-        ILogger<StockRepository> logger)
-    {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly AppDbContext _context = appDbContext ?? throw new ArgumentNullException(nameof(appDbContext));
+    private readonly ILogger<StockRepository> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<IEnumerable<Stock>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -55,6 +49,29 @@ public sealed class StockRepository : IStockRepository
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving stock with ID: {StockId}", id);
+            throw;
+        }
+    }
+
+    public async Task<Stock?> GetBySymbolAsync(string symbol, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(symbol)) throw new ArgumentException("Symbol cannot be empty", nameof(symbol));
+
+        try
+        {
+            _logger.LogInformation("Fetching stock with symbol: {Symbol}", symbol);
+            var stock = await _context.Stocks.FirstOrDefaultAsync(s => s.Symbol == symbol, cancellationToken);
+            
+            if (stock is null)
+            {
+                _logger.LogDebug("Stock with symbol {Symbol} not found", symbol);
+            }
+
+            return stock;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving stock with symbol: {Symbol}", symbol);
             throw;
         }
     }

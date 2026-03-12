@@ -5,5 +5,6 @@
     <Project Path="src/FinShark.Domain/FinShark.Domain.csproj" />
     <Project Path="src/FinShark.Infrastructure/FinShark.Infrastructure.csproj" />
     <Project Path="src/FinShark.Persistence/FinShark.Persistence.csproj" />
+    <Project Path="src/FinShark.Tests/FinShark.Tests.csproj" />
   </Folder>
 </Solution>

@@ -1,5 +1,6 @@
 using FinShark.Domain.Repositories;
 using FinShark.Persistence.Repositories;
+using FinShark.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,6 +42,9 @@ public static class ServiceCollectionExtensions
 
         // Register repositories
         services.AddScoped<IStockRepository, StockRepository>();
+
+        // Register data seeder
+        services.AddScoped<DataSeeder>();
 
         return services;
     }
