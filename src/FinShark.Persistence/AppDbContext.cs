@@ -9,12 +9,10 @@ namespace FinShark.Persistence;
 /// Manages database operations and orchestrates entity configurations
 /// Automatically handles audit timestamps (Created, Modified)
 /// </summary>
-public sealed class AppDbContext : DbContext
+public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public required DbSet<Stock> Stocks { get; set; }
-
-    public AppDbContext(DbContextOptions<AppDbContext> options)
-        : base(options) { }
+    public DbSet<Stock> Stocks { get; set; } = null!;
+    public DbSet<Comment> Comments { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

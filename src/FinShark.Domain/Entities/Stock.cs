@@ -1,5 +1,7 @@
 namespace FinShark.Domain.Entities;
 
+using FinShark.Domain.Enums;
+
 public class Stock : BaseEntity
 {
     public string Symbol { get; private set; }
@@ -7,7 +9,7 @@ public class Stock : BaseEntity
     public decimal CurrentPrice { get; private set; }
     public decimal Purchase { get; private set; }
     public decimal LastDiv { get; private set; }
-    public string Industry { get; set; } = string.Empty;
+    public IndustryType Industry { get; set; } = IndustryType.Other;
     public decimal MarketCap { get; set; }
     public List<Comment> Comments { get; set; } = new List<Comment>();
 
@@ -22,16 +24,18 @@ public class Stock : BaseEntity
         Symbol = symbol;
         CompanyName = companyName;
         CurrentPrice = currentPrice;
+        Purchase = purchase;
+        LastDiv = lastDiv;
         Created = DateTime.UtcNow;
     }
 
     public void Update(string? symbol = null, string? companyName = null, decimal? currentPrice = null, 
-        string? industry = null, decimal? marketCap = null)
+        IndustryType? industry = null, decimal? marketCap = null)
     {
         if (!string.IsNullOrWhiteSpace(symbol)) Symbol = symbol;
         if (!string.IsNullOrWhiteSpace(companyName)) CompanyName = companyName;
         if (currentPrice.HasValue && currentPrice.Value > 0) CurrentPrice = currentPrice.Value;
-        if (!string.IsNullOrWhiteSpace(industry)) Industry = industry;
+        if (industry.HasValue) Industry = industry.Value;
         if (marketCap.HasValue && marketCap.Value >= 0) MarketCap = marketCap.Value;
         Modified = DateTime.UtcNow;
     }

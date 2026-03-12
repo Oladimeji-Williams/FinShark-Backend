@@ -13,24 +13,28 @@ public sealed class UpdateStockValidator : AbstractValidator<UpdateStockRequestD
     {
         RuleFor(x => x.Symbol)
             .NotEmpty().WithMessage("Symbol is required")
-            .MaximumLength(10).WithMessage("Symbol must not exceed 10 characters");
+            .MaximumLength(10).WithMessage("Symbol must not exceed 10 characters")
+            .Matches(@"^[A-Z0-9.]+$").WithMessage("Symbol must contain only uppercase letters, numbers, and dots (e.g., AB.C)")
+            .When(x => x.Symbol != null);
 
         RuleFor(x => x.CompanyName)
             .NotEmpty().WithMessage("Company name is required")
-            .MaximumLength(255).WithMessage("Company name must not exceed 255 characters");
+            .MaximumLength(255).WithMessage("Company name must not exceed 255 characters")
+            .When(x => x.CompanyName != null);
 
         RuleFor(x => x.CurrentPrice)
             .GreaterThan(0).WithMessage("Current price must be greater than 0")
             .PrecisionScale(18, 2, ignoreTrailingZeros: true)
-            .WithMessage("Current price must have at most 2 decimal places");
+            .WithMessage("Current price must have at most 2 decimal places")
+            .When(x => x.CurrentPrice.HasValue);
 
-        RuleFor(x => x.Industry)
-            .NotEmpty().WithMessage("Industry is required")
-            .MaximumLength(100).WithMessage("Industry must not exceed 100 characters");
+        // Industry is an enum - validation is automatic via JSON deserialization
+        // No additional validation needed
 
         RuleFor(x => x.MarketCap)
             .GreaterThanOrEqualTo(0).WithMessage("Market cap must be greater than or equal to 0")
             .PrecisionScale(18, 2, ignoreTrailingZeros: true)
-            .WithMessage("Market cap must have at most 2 decimal places");
+            .WithMessage("Market cap must have at most 2 decimal places")
+            .When(x => x.MarketCap.HasValue);
     }
 }

@@ -10,7 +10,7 @@ namespace FinShark.Application.Stocks.Queries.GetStockById;
 /// Handler for GetStockByIdQuery
 /// Retrieves a single stock by ID from the database
 /// </summary>
-public sealed class GetStockByIdQueryHandler : IRequestHandler<GetStockByIdQuery, StockDto>
+public sealed class GetStockByIdQueryHandler : IRequestHandler<GetStockByIdQuery, GetStockResponseDto>
 {
     private readonly IStockRepository _stockRepository;
     private readonly ILogger<GetStockByIdQueryHandler> _logger;
@@ -23,7 +23,7 @@ public sealed class GetStockByIdQueryHandler : IRequestHandler<GetStockByIdQuery
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<StockDto> Handle(GetStockByIdQuery request, CancellationToken cancellationToken)
+    public async Task<GetStockResponseDto> Handle(GetStockByIdQuery request, CancellationToken cancellationToken)
     {
         if (request == null) throw new ArgumentNullException(nameof(request));
 
