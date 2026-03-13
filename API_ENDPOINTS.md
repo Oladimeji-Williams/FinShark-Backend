@@ -1,4 +1,4 @@
-# FinShark API Endpoints Reference
+﻿# FinShark API Endpoints Reference
 
 Complete guide to all available REST API endpoints with request/response examples.
 
@@ -95,42 +95,59 @@ curl -X POST "https://localhost:5001/api/stocks" \
 
 ### 2. Get All Stocks
 
-Retrieves all stocks with optional pagination and filtering.
+Retrieves all stocks with optional filtering, sorting, and pagination.
 
 **Endpoint**: `GET /api/stocks`
 
 **Query Parameters**:
-- `page` (int, optional): Page number (default: 1)
-- `pageSize` (int, optional): Items per page (default: 10, max: 100)
+- `pageNumber` (int, optional): Page number (1-based)
+- `pageSize` (int, optional): Items per page (max: 100)
 - `industry` (string, optional): Filter by industry
 - `symbol` (string, optional): Search by symbol (partial match)
+- `companyName` (string, optional): Search by company name (partial match)
+- `minPrice` (decimal, optional): Minimum current price
+- `maxPrice` (decimal, optional): Maximum current price
+- `minMarketCap` (decimal, optional): Minimum market cap
+- `maxMarketCap` (decimal, optional): Maximum market cap
+- `sortBy` (string, optional): Sort field (`symbol`, `companyName`, `currentPrice`, `marketCap`, `created`)
+- `sortDirection` (string, optional): `asc` or `desc`
 
 **Response (200 OK)**:
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": 1,
-      "symbol": "AAPL",
-      "companyName": "Apple Inc.",
-      "currentPrice": 250.50,
-      "industry": "Technology",
-      "marketCap": 2500000000000,
-      "createdAt": "2026-03-10T10:30:00Z",
-      "updatedAt": null
-    },
-    {
-      "id": 2,
-      "symbol": "MSFT",
-      "companyName": "Microsoft Corporation",
-      "currentPrice": 380.25,
-      "industry": "Technology",
-      "marketCap": 2800000000000,
-      "createdAt": "2026-03-11T14:15:00Z",
-      "updatedAt": null
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "symbol": "AAPL",
+        "companyName": "Apple Inc.",
+        "currentPrice": 250.50,
+        "industry": "Technology",
+        "marketCap": 2500000000000,
+        "createdAt": "2026-03-10T10:30:00Z",
+        "updatedAt": null
+      },
+      {
+        "id": 2,
+        "symbol": "MSFT",
+        "companyName": "Microsoft Corporation",
+        "currentPrice": 380.25,
+        "industry": "Technology",
+        "marketCap": 2800000000000,
+        "createdAt": "2026-03-11T14:15:00Z",
+        "updatedAt": null
+      }
+    ],
+    "pagination": {
+      "totalCount": 2,
+      "pageNumber": 1,
+      "pageSize": 2,
+      "totalPages": 1,
+      "hasNextPage": false,
+      "hasPreviousPage": false
     }
-  ],
+  },
   "message": "Stocks retrieved successfully",
   "errors": null
 }
@@ -143,7 +160,7 @@ curl -X GET "https://localhost:5001/api/stocks" \
   -H "Content-Type: application/json"
 
 # Get with pagination
-curl -X GET "https://localhost:5001/api/stocks?page=1&pageSize=20" \
+curl -X GET "https://localhost:5001/api/stocks?pageNumber=1&pageSize=20" \
   -H "Content-Type: application/json"
 
 # Filter by industry
@@ -203,7 +220,7 @@ curl -X GET "https://localhost:5001/api/stocks/1" \
 
 Updates an existing stock.
 
-**Endpoint**: `PUT /api/stocks/{id}`
+**Endpoint**: `PATCH /api/stocks/{id}`
 
 **Path Parameters**:
 - `id` (int, required): Stock ID
@@ -254,7 +271,7 @@ Updates an existing stock.
 
 **Example cURL**:
 ```bash
-curl -X PUT "https://localhost:5001/api/stocks/1" \
+curl -X PATCH "https://localhost:5001/api/stocks/1" \
   -H "Content-Type: application/json" \
   -d '{
     "symbol": "AAPL",
@@ -310,7 +327,7 @@ curl -X DELETE "https://localhost:5001/api/stocks/1" \
 
 Creates a new comment on a stock.
 
-**Endpoint**: `POST /api/comments`
+**Endpoint**: `POST /api/stocks/{stockId}/comments`
 
 **Request Headers**:
 ```
@@ -320,7 +337,6 @@ Content-Type: application/json
 **Request Body**:
 ```json
 {
-  "stockId": 1,
   "title": "Great Investment",
   "content": "This stock has strong fundamentals and great growth potential",
   "rating": 5
@@ -364,10 +380,9 @@ Content-Type: application/json
 
 **Example cURL**:
 ```bash
-curl -X POST "https://localhost:5001/api/comments" \
+curl -X POST "https://localhost:5001/api/stocks/1/comments" \
   -H "Content-Type: application/json" \
   -d '{
-    "stockId": 1,
     "title": "Great Investment",
     "content": "This stock has strong fundamentals and great growth potential",
     "rating": 5
@@ -383,24 +398,34 @@ Retrieves all comments with optional pagination.
 **Endpoint**: `GET /api/comments`
 
 **Query Parameters**:
-- `pageNumber` (int, optional): Page number (default: 1)
-- `pageSize` (int, optional): Items per page (default: 10, max: 100)
+- `pageNumber` (int, optional): Page number (1-based)
+- `pageSize` (int, optional): Items per page (max: 100)
 
 **Response (200 OK)**:
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": 1,
-      "stockId": 1,
-      "title": "Great Investment",
-      "content": "This stock has strong fundamentals and great growth potential",
-      "rating": 5,
-      "createdAt": "2026-03-11T14:20:00Z",
-      "updatedAt": null
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "stockId": 1,
+        "title": "Great Investment",
+        "content": "This stock has strong fundamentals and great growth potential",
+        "rating": 5,
+        "createdAt": "2026-03-11T14:20:00Z",
+        "updatedAt": null
+      }
+    ],
+    "pagination": {
+      "totalCount": 1,
+      "pageNumber": 1,
+      "pageSize": 1,
+      "totalPages": 1,
+      "hasNextPage": false,
+      "hasPreviousPage": false
     }
-  ],
+  },
   "message": "Comments retrieved successfully",
   "errors": null
 }
@@ -463,35 +488,49 @@ curl -X GET "https://localhost:5001/api/comments/1" \
 
 Retrieves all comments for a specific stock.
 
-**Endpoint**: `GET /api/comments/stock/{stockId}`
+**Endpoint**: `GET /api/stocks/{stockId}/comments`
 
 **Path Parameters**:
 - `stockId` (int, required): Stock ID
+
+**Query Parameters**:
+- `pageNumber` (int, optional): Page number (1-based)
+- `pageSize` (int, optional): Items per page (max: 100)
 
 **Response (200 OK)**:
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": 1,
-      "stockId": 1,
-      "title": "Great Investment",
-      "content": "This stock has strong fundamentals and great growth potential",
-      "rating": 5,
-      "createdAt": "2026-03-11T14:20:00Z",
-      "updatedAt": null
-    },
-    {
-      "id": 2,
-      "stockId": 1,
-      "title": "Strong Performer",
-      "content": "Consistent returns over the past 5 years",
-      "rating": 4,
-      "createdAt": "2026-03-11T14:25:00Z",
-      "updatedAt": null
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "stockId": 1,
+        "title": "Great Investment",
+        "content": "This stock has strong fundamentals and great growth potential",
+        "rating": 5,
+        "createdAt": "2026-03-11T14:20:00Z",
+        "updatedAt": null
+      },
+      {
+        "id": 2,
+        "stockId": 1,
+        "title": "Strong Performer",
+        "content": "Consistent returns over the past 5 years",
+        "rating": 4,
+        "createdAt": "2026-03-11T14:25:00Z",
+        "updatedAt": null
+      }
+    ],
+    "pagination": {
+      "totalCount": 2,
+      "pageNumber": 1,
+      "pageSize": 2,
+      "totalPages": 1,
+      "hasNextPage": false,
+      "hasPreviousPage": false
     }
-  ],
+  },
   "message": "Comments retrieved successfully",
   "errors": null
 }
@@ -509,7 +548,7 @@ Retrieves all comments for a specific stock.
 
 **Example cURL**:
 ```bash
-curl -X GET "https://localhost:5001/api/comments/stock/1" \
+curl -X GET "https://localhost:5001/api/stocks/1/comments" \
   -H "Content-Type: application/json"
 ```
 
@@ -519,7 +558,7 @@ curl -X GET "https://localhost:5001/api/comments/stock/1" \
 
 Updates an existing comment.
 
-**Endpoint**: `PUT /api/comments/{id}`
+**Endpoint**: `PATCH /api/comments/{id}`
 
 **Path Parameters**:
 - `id` (int, required): Comment ID
@@ -555,7 +594,7 @@ Updates an existing comment.
 
 **Example cURL**:
 ```bash
-curl -X PUT "https://localhost:5001/api/comments/1" \
+curl -X PATCH "https://localhost:5001/api/comments/1" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Excellent Investment",
@@ -622,7 +661,7 @@ interface ApiResponse<T> {
 
 | Code | Meaning | Example |
 |------|---------|---------|
-| 200 | OK | Successful GET, PUT, DELETE |
+| 200 | OK | Successful GET, PATCH, DELETE |
 | 201 | Created | Successful POST |
 | 400 | Bad Request | Validation errors, malformed data |
 | 404 | Not Found | Resource doesn't exist |
@@ -708,7 +747,7 @@ Invoke-RestMethod -Uri "https://localhost:5001/api/stocks/1" `
   -Method GET `
   -SkipCertificateCheck
 
-# PUT - Update
+# PATCH - Update
 $updateBody = @{
     symbol = "AAPL"
     companyName = "Apple Inc."
@@ -718,7 +757,7 @@ $updateBody = @{
 } | ConvertTo-Json
 
 Invoke-RestMethod -Uri "https://localhost:5001/api/stocks/1" `
-  -Method PUT `
+  -Method PATCH `
   -ContentType "application/json" `
   -Body $updateBody `
   -SkipCertificateCheck
@@ -755,7 +794,7 @@ GET {{baseUrl}}/stocks
 GET {{baseUrl}}/stocks/{{stockId}}
 
 ### Update Stock
-PUT {{baseUrl}}/stocks/{{stockId}}
+PATCH {{baseUrl}}/stocks/{{stockId}}
 Content-Type: application/json
 
 {
@@ -799,14 +838,16 @@ For large datasets, use pagination:
 
 ```bash
 # Get first page (10 items)
-GET /api/stocks?page=1&pageSize=10
+GET /api/stocks?pageNumber=1&pageSize=10
 
 # Get second page
-GET /api/stocks?page=2&pageSize=10
+GET /api/stocks?pageNumber=2&pageSize=10
 
 # Change page size
-GET /api/stocks?page=1&pageSize=50
+GET /api/stocks?pageNumber=1&pageSize=50
 ```
+
+Pagination metadata is included in `data.pagination` for `GET /api/stocks`, `GET /api/comments`, and `GET /api/stocks/{stockId}/comments`.
 
 ---
 

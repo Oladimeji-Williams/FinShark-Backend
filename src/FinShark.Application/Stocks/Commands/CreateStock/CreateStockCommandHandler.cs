@@ -1,5 +1,6 @@
 ﻿using FinShark.Application.Dtos;
 using FinShark.Application.Mappers;
+using FinShark.Domain.Exceptions;
 using FinShark.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -24,31 +25,27 @@ public sealed class CreateStockCommandHandler(
     {
         if (request == null) throw new ArgumentNullException(nameof(request));
 
-        _logger.LogInformation("Creating new stock with symbol: {Symbol}, company: {CompanyName}", 
+        _logger.LogInformation("Creating new stock with symbol: {Symbol}, company: {CompanyName}",
             request.Symbol, request.CompanyName);
+
+        // Check if stock with this symbol already exists
+        var existingStock = await _stockRepository.GetBySymbolAsync(request.Symbol, cancellationToken);
+        if (existingStock != null)
+        {
+            _logger.LogWarning("Stock with symbol {Symbol} already exists", request.Symbol);
+            throw new StockAlreadyExistsException($"A stock with symbol '{request.Symbol}' already exists.");
+        }
 
         try
         {
-            // Check if stock with this symbol already exists
-            var existingStock = await _stockRepository.GetBySymbolAsync(request.Symbol, cancellationToken);
-            if (existingStock != null)
-            {
-                _logger.LogWarning("Stock with symbol {Symbol} already exists", request.Symbol);
-                throw new InvalidOperationException($"A stock with symbol '{request.Symbol}' already exists.");
-            }
-
             // Map command directly to entity (eliminates intermediate DTO)
             var stock = StockMapper.ToEntity(request);
 
-            await _stockRepository.AddAsync(stock);
+            await _stockRepository.AddAsync(stock, cancellationToken);
 
             _logger.LogInformation("Stock created successfully with ID: {StockId}", stock.Id);
 
             return new CreateStockResponseDto { Id = stock.Id };
-        }
-        catch (InvalidOperationException)
-        {
-            throw;
         }
         catch (Exception ex)
         {

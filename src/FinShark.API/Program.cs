@@ -1,4 +1,4 @@
-using FinShark.Application;
+﻿using FinShark.Application;
 using FinShark.API.Configuration;
 using FinShark.API.Serialization;
 using FinShark.Infrastructure;
@@ -7,6 +7,7 @@ using DotNetEnv;
 using Serilog;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
 
 // ============================================
 // Serilog Configuration
@@ -77,6 +78,9 @@ builder.Services.AddInfrastructureServices();
 // Data Access Layer Services
 builder.Services.AddPersistenceServices(builder.Configuration);
 
+// Authentication & Authorization
+builder.Services.AddAuthenticationConfiguration(builder.Configuration);
+
 // API Layer Services - Completely Separated Configuration
 builder.Services.AddCorsConfiguration(builder.Configuration);
 builder.Services.AddOpenApiConfiguration();
@@ -87,6 +91,29 @@ builder.Services.AddControllers()
         options.SerializerSettings.Converters.Add(new IndustryTypeJsonConverter());
         options.SerializerSettings.Converters.Add(new RatingJsonConverter());
     });
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(entry => entry.Value?.Errors.Count > 0)
+            .Select(entry =>
+                string.IsNullOrWhiteSpace(entry.Key)
+                    ? "Invalid request payload."
+                    : $"Invalid value for '{entry.Key}'.")
+            .Distinct()
+            .ToArray();
+
+        if (errors.Length == 0)
+        {
+            errors = new[] { "Invalid request payload." };
+        }
+
+        var response = FinShark.Application.Dtos.ApiResponse<object>.FailureResponse("Validation failed", errors);
+        return new BadRequestObjectResult(response);
+    };
+});
 
 // ============================================
 // Build Application

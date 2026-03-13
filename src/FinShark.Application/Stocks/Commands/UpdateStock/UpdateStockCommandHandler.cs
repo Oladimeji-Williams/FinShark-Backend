@@ -1,5 +1,6 @@
-using MediatR;
+﻿using MediatR;
 using FinShark.Domain.Repositories;
+using FinShark.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace FinShark.Application.Stocks.Commands.UpdateStock;
@@ -33,7 +34,7 @@ public sealed class UpdateStockCommandHandler : IRequestHandler<UpdateStockComma
         if (existingStock == null)
         {
             _logger.LogWarning("Stock not found for update with ID: {StockId}", request.Id);
-            throw new KeyNotFoundException($"Stock with ID {request.Id} not found.");
+            throw new StockNotFoundException($"Stock with ID {request.Id} not found.");
         }
 
         try

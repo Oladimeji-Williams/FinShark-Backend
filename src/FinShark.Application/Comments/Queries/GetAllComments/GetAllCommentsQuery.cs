@@ -9,4 +9,4 @@ namespace FinShark.Application.Comments.Queries.GetAllComments;
 public sealed record GetAllCommentsQuery(
     int? PageNumber = null,
     int? PageSize = null
-) : IRequest<IEnumerable<GetCommentResponseDto>>;
+) : IRequest<PagedResult<GetCommentResponseDto>>;

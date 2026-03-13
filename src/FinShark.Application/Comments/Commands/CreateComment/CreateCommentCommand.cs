@@ -7,6 +7,7 @@ namespace FinShark.Application.Comments.Commands.CreateComment;
 /// Command to create a new comment
 /// </summary>
 public sealed record CreateCommentCommand(
+    string UserId,
     int StockId,
     string Title,
     string Content,

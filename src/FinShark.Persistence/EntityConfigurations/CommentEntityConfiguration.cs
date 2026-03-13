@@ -20,6 +20,11 @@ public static class CommentEntityConfiguration
             // Primary Key
             entity.HasKey(e => e.Id);
 
+            // User ID (Foreign Key)
+            entity.Property(e => e.UserId)
+                .IsRequired()
+                .HasComment("Reference to ApplicationUser");
+
             // Stock ID (Foreign Key)
             entity.Property(e => e.StockId)
                 .IsRequired()
@@ -60,9 +65,18 @@ public static class CommentEntityConfiguration
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_Comments_Stocks");
 
+            entity.HasOne(c => c.User)
+                .WithMany(u => u.Comments)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Comments_AspNetUsers_UserId");
+
             // Indexes for performance
             entity.HasIndex(e => e.StockId)
                 .HasDatabaseName("IX_Comment_StockId");
+
+            entity.HasIndex(e => e.UserId)
+                .HasDatabaseName("IX_Comment_UserId");
 
             entity.HasIndex(e => e.Created)
                 .HasDatabaseName("IX_Comment_Created");

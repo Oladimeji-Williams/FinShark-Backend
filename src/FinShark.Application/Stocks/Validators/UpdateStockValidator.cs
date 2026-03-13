@@ -1,16 +1,19 @@
+using FinShark.Application.Stocks.Commands.UpdateStock;
 using FluentValidation;
-using FinShark.Application.Dtos;
 
 namespace FinShark.Application.Stocks.Validators;
 
 /// <summary>
-/// Validator for UpdateStockRequestDto
+/// Validator for UpdateStockCommand
 /// Ensures all update data meets business requirements
 /// </summary>
-public sealed class UpdateStockValidator : AbstractValidator<UpdateStockRequestDto>
+public sealed class UpdateStockValidator : AbstractValidator<UpdateStockCommand>
 {
     public UpdateStockValidator()
     {
+        RuleFor(x => x.Id)
+            .GreaterThan(0).WithMessage("Stock ID must be greater than 0");
+
         RuleFor(x => x.Symbol)
             .NotEmpty().WithMessage("Symbol is required")
             .MaximumLength(10).WithMessage("Symbol must not exceed 10 characters")
@@ -27,9 +30,6 @@ public sealed class UpdateStockValidator : AbstractValidator<UpdateStockRequestD
             .PrecisionScale(18, 2, ignoreTrailingZeros: true)
             .WithMessage("Current price must have at most 2 decimal places")
             .When(x => x.CurrentPrice.HasValue);
-
-        // Industry is an enum - validation is automatic via JSON deserialization
-        // No additional validation needed
 
         RuleFor(x => x.MarketCap)
             .GreaterThanOrEqualTo(0).WithMessage("Market cap must be greater than or equal to 0")

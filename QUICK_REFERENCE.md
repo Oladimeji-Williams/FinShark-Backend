@@ -502,17 +502,17 @@ public sealed class MyEntityMapper
 POST   /api/stocks              → Create stock
 GET    /api/stocks              → Get all stocks
 GET    /api/stocks/{id}         → Get stock by ID
-PUT    /api/stocks/{id}         → Update stock
+PATCH  /api/stocks/{id}         → Update stock
 DELETE /api/stocks/{id}         → Delete stock
 ```
 
 #### Comment Endpoints
 ```
-POST   /api/comments              → Create comment
+POST   /api/stocks/{id}/comments  → Create comment
 GET    /api/comments              → Get all comments
 GET    /api/comments/{id}         → Get comment by ID
-GET    /api/comments/stock/{id}   → Get comments for stock
-PUT    /api/comments/{id}         → Update comment
+GET    /api/stocks/{id}/comments  → Get comments for stock
+PATCH  /api/comments/{id}         → Update comment
 DELETE /api/comments/{id}         → Delete comment
 ```
 
@@ -651,9 +651,8 @@ ASPNETCORE_Urls=https://+:443;http://+:80
 
 | Code | Usage |
 |------|-------|
-| 200 | GET/PUT success |
+| 200 | GET/PATCH/DELETE success |
 | 201 | POST success (Created) |
-| 204 | DELETE success (No Content) |
 | 400 | Validation error |
 | 401 | Unauthorized |
 | 403 | Forbidden |

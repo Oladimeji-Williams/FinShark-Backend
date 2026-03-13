@@ -3,7 +3,7 @@ namespace FinShark.Application.Dtos;
 /// <summary>
 /// Generic API response wrapper for consistent response formatting
 /// </summary>
-public sealed class ApiResponse<T>
+public sealed record ApiResponse<T>
 {
     public required bool Success { get; init; }
     public T? Data { get; init; }

@@ -1,33 +1,10 @@
-# FinShark Error Handling Guide
+﻿# FinShark Error Handling Guide
 
 Comprehensive error handling strategy and implementation patterns.
 
 ## Error Handling Architecture
 
-```
-User Request
-    ↓
-Controller
-    ↓
-Validation
-    ├─ FluentValidation
-    └─ If fails → ValidationException
-    ↓
-Business Logic
-    ├─ Domain Logic
-    └─ If fails → DomainException, NotFoundException, etc.
-    ↓
-Repository/Database
-    └─ If fails → DbException (caught and wrapped)
-    ↓
-Exception Middleware
-    ├─ Catches ALL exceptions
-    ├─ Logs exception
-    ├─ Converts to ApiResponse
-    └─ Returns HTTP response
-    ↓
-Client receives standardized ErrorResponse
-```
+Request -> Controller -> Validation (FluentValidation via MediatR) -> Business Logic -> Repository/Database -> Exception Middleware -> Client
 
 ---
 
@@ -48,7 +25,7 @@ public class CreateStockValidator : AbstractValidator<CreateStockCommand>
     {
         RuleFor(x => x.Symbol)
             .NotEmpty().WithMessage("Symbol is required")
-            .Length(1, 10).WithMessage("Symbol must be 1-10 characters");
+            .MaximumLength(10).WithMessage("Symbol cannot exceed 10 characters");
     }
 }
 
@@ -61,14 +38,14 @@ var result = await mediator.Send(command);
 {
   "success": false,
   "data": null,
-  "errors": ["Symbol is required"],
-  "message": null
+  "message": "Validation failed",
+  "errors": ["Symbol is required"]
 }
 ```
 
 ### 2. Not Found Exceptions
 
-**When**: Resource doesn't exist
+**When**: Resource does not exist
 
 **Status Code**: 404 Not Found
 
@@ -80,11 +57,11 @@ public class GetStockByIdQueryHandler : IRequestHandler<GetStockByIdQuery, Stock
 
     public async Task<StockDto> Handle(GetStockByIdQuery request, CancellationToken ct)
     {
-        var stock = await _repository.GetByIdAsync(request.Id);
-        
+        var stock = await _repository.GetByIdAsync(request.Id, ct);
+
         if (stock == null)
             throw new StockNotFoundException($"Stock with ID {request.Id} not found");
-        
+
         return StockMapper.ToDto(stock);
     }
 }
@@ -93,60 +70,33 @@ public class GetStockByIdQueryHandler : IRequestHandler<GetStockByIdQuery, Stock
 {
   "success": false,
   "data": null,
-  "errors": ["Stock with ID 999 not found"],
-  "message": null
-}
-```
-
-**Comment Not Found Example**:
-```csharp
-public class GetCommentByIdQueryHandler : IRequestHandler<GetCommentByIdQuery, CommentDto>
-{
-    private readonly ICommentRepository _repository;
-
-    public async Task<CommentDto> Handle(GetCommentByIdQuery request, CancellationToken ct)
-    {
-        var comment = await _repository.GetByIdAsync(request.Id);
-        
-        if (comment == null)
-            throw new CommentNotFoundException($"Comment with ID {request.Id} not found");
-        
-        return CommentMapper.ToDto(comment);
-    }
-}
-
-// Response:
-{
-  "success": false,
-  "data": null,
-  "errors": ["Comment with ID 999 not found"],
-  "message": null
+  "message": "Stock with ID 999 not found",
+  "errors": null
 }
 ```
 
 ### 3. Conflict Exceptions
 
-**When**: Business rule violation
+**When**: Business rule violation (duplicate resource)
 
 **Status Code**: 409 Conflict
 
 **Example**:
 ```csharp
-// Duplicate stock symbol
-public class CreateStockCommandHandler : IRequestHandler<CreateStockCommand, int>
+public class CreateStockCommandHandler : IRequestHandler<CreateStockCommand, CreateStockResponseDto>
 {
     private readonly IStockRepository _repository;
 
-    public async Task<int> Handle(CreateStockCommand request, CancellationToken ct)
+    public async Task<CreateStockResponseDto> Handle(CreateStockCommand request, CancellationToken ct)
     {
-        var existingStock = await _repository.GetBySymbolAsync(request.Symbol);
-        
+        var existingStock = await _repository.GetBySymbolAsync(request.Symbol, ct);
+
         if (existingStock != null)
             throw new StockAlreadyExistsException(
                 $"A stock with symbol '{request.Symbol}' already exists");
-        
+
         // ... create stock
-        return stock.Id;
+        return new CreateStockResponseDto { Id = stock.Id };
     }
 }
 
@@ -154,42 +104,20 @@ public class CreateStockCommandHandler : IRequestHandler<CreateStockCommand, int
 {
   "success": false,
   "data": null,
-  "errors": ["A stock with symbol 'AAPL' already exists"],
-  "message": null
+  "message": "A stock with symbol 'AAPL' already exists",
+  "errors": null
 }
 ```
 
-### 4. Invalid Operation Exceptions
+### 4. Domain Exceptions (Generic)
 
-**When**: Operation violates business invariants
+**When**: A domain exception is thrown without a more specific HTTP mapping
 
-**Status Code**: 422 Unprocessable Entity
+**Status Code**: 400 Bad Request
 
 **Example**:
 ```csharp
-// Trying to delete stock with pending transactions
-public class DeleteStockCommandHandler : IRequestHandler<DeleteStockCommand>
-{
-    public async Task Handle(DeleteStockCommand request, CancellationToken ct)
-    {
-        var stock = await _repository.GetByIdAsync(request.Id);
-        
-        if (stock.HasPendingTransactions)
-            throw new InvalidOperationException(
-                "Cannot delete stock with pending transactions");
-        }
-    
-        await _repository.DeleteAsync(stock);
-    }
-}
-
-// Response:
-{
-  "success": false,
-  "data": null,
-  "errors": ["Cannot delete stock with pending transactions"],
-  "message": null
-}
+throw new FinSharkException("Business rule violation");
 ```
 
 ### 5. Server Errors
@@ -198,32 +126,13 @@ public class DeleteStockCommandHandler : IRequestHandler<DeleteStockCommand>
 
 **Status Code**: 500 Internal Server Error
 
-**Example**:
-```csharp
-// Unexpected error in business logic
-public async Task Handle(CreateStockCommand request, CancellationToken ct)
-{
-    try
-    {
-        var stock = new Stock(request.Symbol, /* ... */);
-        // Unexpected error occurs here
-        var result = await _repository.AddAsync(stock);
-        return result.Id;
-    }
-    catch (Exception ex)
-    {
-        // Exception middleware catches ALL unhandled exceptions
-        // and converts to 500 error
-        throw;
-    }
-}
-
-// Response:
+**Response**:
+```json
 {
   "success": false,
   "data": null,
-  "errors": ["An unexpected error occurred. Please try again later."],
-  "message": null
+  "message": "An unexpected error occurred. Please contact support.",
+  "errors": null
 }
 ```
 
@@ -231,57 +140,45 @@ public async Task Handle(CreateStockCommand request, CancellationToken ct)
 
 ## Custom Exception Classes
 
-### Base Exception
-
 ```csharp
 // FinShark.Domain/Exceptions/FinSharkException.cs
 namespace FinShark.Domain.Exceptions;
 
-/// <summary>
-/// Base exception for all FinShark domain exceptions
-/// </summary>
 public abstract class FinSharkException : Exception
 {
     public virtual int ErrorCode { get; protected set; } = 1000;
-    
+
     protected FinSharkException(string message)
         : base(message) { }
-    
+
     protected FinSharkException(string message, Exception innerException)
         : base(message, innerException) { }
 }
-```
 
-### Specific Exception Types
-
-```csharp
-// Not found
 public sealed class StockNotFoundException : FinSharkException
 {
-    public StockNotFoundException(string message) 
-        : base(message) 
+    public StockNotFoundException(string message)
+        : base(message)
     {
         ErrorCode = 1001;
     }
 }
 
-// Already exists
-public sealed class StockAlreadyExistsException : FinSharkException
+public sealed class CommentNotFoundException : FinSharkException
 {
-    public StockAlreadyExistsException(string message) 
-        : base(message) 
+    public CommentNotFoundException(string message)
+        : base(message)
     {
-        ErrorCode = 1002;
+        ErrorCode = 1001;
     }
 }
 
-// Invalid operation
-public sealed class InvalidStockOperationException : FinSharkException
+public sealed class StockAlreadyExistsException : FinSharkException
 {
-    public InvalidStockOperationException(string message) 
-        : base(message) 
+    public StockAlreadyExistsException(string message)
+        : base(message)
     {
-        ErrorCode = 1003;
+        ErrorCode = 1002;
     }
 }
 ```
@@ -290,145 +187,41 @@ public sealed class InvalidStockOperationException : FinSharkException
 
 ## Exception Middleware
 
-### Complete Implementation
-
 ```csharp
 // FinShark.API/Middleware/ExceptionMiddleware.cs
-using FinShark.Application.Dtos;
-using FinShark.Domain.Exceptions;
-using FluentValidation;
-using System.Net;
-
-namespace FinShark.API.Middleware;
-
-public class ExceptionMiddleware
+public async Task InvokeAsync(HttpContext context)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ExceptionMiddleware> _logger;
-
-    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
+    try
     {
-        _next = next;
-        _logger = logger;
+        await _next(context);
     }
-
-    public async Task InvokeAsync(HttpContext context)
+    catch (ValidationException vex)
     {
-        try
-        {
-            await _next(context);
-        }
-        catch (Exception ex)
-        {
-            await HandleExceptionAsync(context, ex);
-        }
+        await HandleValidationExceptionAsync(context, vex);
     }
-
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    catch (StockAlreadyExistsException saex)
     {
-        var response = context.Response;
-        response.ContentType = "application/json";
-
-        var apiResponse = exception switch
-        {
-            // Validation errors (400)
-            ValidationException validationEx => HandleValidationException(response, validationEx),
-            
-            // Not found (404)
-            StockNotFoundException notFoundEx => HandleNotFoundException(response, notFoundEx),
-            
-            // Conflict (409)
-            StockAlreadyExistsException conflictEx => HandleConflictException(response, conflictEx),
-            
-            // Invalid operation (422)
-            InvalidOperationException invalidOpEx => HandleInvalidOperationException(response, invalidOpEx),
-            
-            // Server errors (500)
-            _ => HandleUnexpectedException(response, exception)
-        };
-
-        return response.WriteAsJsonAsync(apiResponse);
+        await HandleConflictExceptionAsync(context, saex);
     }
-
-    private static ApiResponse<object> HandleValidationException(
-        HttpResponse response,
-        ValidationException ex)
+    catch (StockNotFoundException snfex)
     {
-        response.StatusCode = StatusCodes.Status400BadRequest;
-        
-        return new ApiResponse<object>
-        {
-            Success = false,
-            Data = null,
-            Errors = ex.Errors
-                .GroupBy(e => e.PropertyName)
-                .Select(group => group.First().ErrorMessage)
-                .ToArray(),
-            Message = null
-        };
+        await HandleNotFoundExceptionAsync(context, snfex);
     }
-
-    private static ApiResponse<object> HandleNotFoundException(
-        HttpResponse response,
-        Exception ex)
+    catch (CommentNotFoundException cnfex)
     {
-        response.StatusCode = StatusCodes.Status404NotFound;
-        
-        return new ApiResponse<object>
-        {
-            Success = false,
-            Data = null,
-            Errors = new[] { ex.Message },
-            Message = null
-        };
+        await HandleNotFoundExceptionAsync(context, cnfex);
     }
-
-    private static ApiResponse<object> HandleConflictException(
-        HttpResponse response,
-        Exception ex)
+    catch (FinSharkException fex)
     {
-        response.StatusCode = StatusCodes.Status409Conflict;
-        
-        return new ApiResponse<object>
-        {
-            Success = false,
-            Data = null,
-            Errors = new[] { ex.Message },
-            Message = null
-        };
+        await HandleDomainExceptionAsync(context, fex);
     }
-
-    private static ApiResponse<object> HandleInvalidOperationException(
-        HttpResponse response,
-        Exception ex)
+    catch (KeyNotFoundException knfex)
     {
-        response.StatusCode = StatusCodes.Status422UnprocessableEntity;
-        
-        return new ApiResponse<object>
-        {
-            Success = false,
-            Data = null,
-            Errors = new[] { ex.Message },
-            Message = null
-        };
+        await HandleNotFoundExceptionAsync(context, knfex);
     }
-
-    private static ApiResponse<object> HandleUnexpectedException(
-        HttpResponse response,
-        Exception ex)
+    catch (Exception)
     {
-        response.StatusCode = StatusCodes.Status500InternalServerError;
-        
-        // Don't expose internal error details in production
-        var errorMessage = "An unexpected error occurred. Please try again later.";
-        
-        return new ApiResponse<object>
-        {
-            Success = false,
-            Data = null,
-            Errors = new[] { errorMessage },
-            Message = null
-        };
+        await HandleExceptionAsync(context);
     }
 }
 ```
@@ -444,10 +237,9 @@ app.UseMiddleware<ExceptionMiddleware>();
 
 ## Try-Catch Best Practices
 
-### ✅ Correct Pattern
+### Correct Pattern
 
 ```csharp
-// Catch specific exceptions at appropriate layer
 public async Task<Stock> GetStockAsync(int id)
 {
     try
@@ -457,14 +249,13 @@ public async Task<Stock> GetStockAsync(int id)
     }
     catch (DbException ex)
     {
-        // Unexpected database error - log and wrap
         _logger.LogError(ex, "Database connection error while fetching stock {StockId}", id);
         throw new ApplicationException("Database operation failed", ex);
     }
 }
 ```
 
-### ❌ Incorrect Patterns
+### Incorrect Patterns
 
 ```csharp
 // Don't catch and swallow exceptions
@@ -474,7 +265,7 @@ try
 }
 catch
 {
-    // BAD: Exception is lost, caller doesn't know about error
+    // BAD: Exception is lost
 }
 
 // Don't catch too broad
@@ -482,7 +273,7 @@ try
 {
     await _repository.AddAsync(stock);
 }
-catch (Exception ex) // BAD: Too broad, catches system exceptions
+catch (Exception ex) // BAD
 {
     _logger.LogError(ex, "Error");
 }
@@ -490,13 +281,13 @@ catch (Exception ex) // BAD: Too broad, catches system exceptions
 // Don't throw without context
 if (stock == null)
 {
-    throw new Exception("Not found"); // BAD: Generic message, no context
+    throw new Exception("Not found"); // BAD
 }
 
 // Don't create new exception and lose original
 catch (DbException ex)
 {
-    throw new Exception("Database error"); // BAD: Loses original exception
+    throw new Exception("Database error"); // BAD
 }
 ```
 
@@ -507,11 +298,8 @@ catch (DbException ex)
 | Code | Error Type | HTTP Status | Description |
 |------|-----------|-------------|-------------|
 | 1000 | Base Error | 500 | Generic FinShark error |
-| 1001 | Not Found | 404 | Stock/resource not found |
+| 1001 | Not Found | 404 | Stock/comment not found |
 | 1002 | Already Exists | 409 | Duplicate resource |
-| 1003 | Invalid Operation | 422 | Business rule violation |
-| 4000 | Validation Error | 400 | Input validation failed |
-| 5000 | Server Error | 500 | Unexpected error |
 
 ---
 
@@ -537,10 +325,10 @@ catch (DbException ex)
 {
   "success": false,
   "data": null,
-  "message": null,
+  "message": "Validation failed",
   "errors": [
     "Symbol is required",
-    "Current Price must be greater than 0"
+    "Current price must be greater than 0"
   ]
 }
 ```
@@ -551,8 +339,19 @@ catch (DbException ex)
 {
   "success": false,
   "data": null,
-  "message": null,
-  "errors": ["Stock with ID 999 not found"]
+  "message": "Stock with ID 999 not found",
+  "errors": null
+}
+```
+
+### Conflict Response
+
+```json
+{
+  "success": false,
+  "data": null,
+  "message": "A stock with symbol 'AAPL' already exists",
+  "errors": null
 }
 ```
 
@@ -562,25 +361,10 @@ catch (DbException ex)
 {
   "success": false,
   "data": null,
-  "message": null,
-  "errors": ["An unexpected error occurred. Please try again later."]
+  "message": "An unexpected error occurred. Please contact support.",
+  "errors": null
 }
 ```
-
----
-
-## Error Handling Checklist
-
-- [ ] All exceptions caught at appropriate layer
-- [ ] Exceptions logged with context
-- [ ] Custom exception classes created
-- [ ] Exception middleware implemented
-- [ ] Error responses standardized
-- [ ] HTTP status codes correct
-- [ ] No sensitive data in error messages
-- [ ] Production errors don't expose internals
-- [ ] All code paths tested for errors
-- [ ] Error messages are user-friendly
 
 ---
 
@@ -595,12 +379,12 @@ public async Task CreateStock_WithDuplicateSymbol_ThrowsException()
     await _repository.AddAsync(existingStock);
 
     var command = new CreateStockCommand("AAPL", /* ... */);
-    var handler = new CreateStockCommandHandler(_repository);
+    var handler = new CreateStockCommandHandler(_repository, _logger);
 
     // Act & Assert
     var ex = await Assert.ThrowsAsync<StockAlreadyExistsException>(
         () => handler.Handle(command, CancellationToken.None));
-    
+
     Assert.Contains("already exists", ex.Message);
 }
 
@@ -609,12 +393,12 @@ public async Task GetStock_WithInvalidId_ReturnsNotFound()
 {
     // Arrange
     var query = new GetStockByIdQuery(999);
-    var handler = new GetStockByIdQueryHandler(_repository);
+    var handler = new GetStockByIdQueryHandler(_repository, _logger);
 
     // Act & Assert
     var ex = await Assert.ThrowsAsync<StockNotFoundException>(
         () => handler.Handle(query, CancellationToken.None));
-    
+
     Assert.Contains("999", ex.Message);
 }
 ```

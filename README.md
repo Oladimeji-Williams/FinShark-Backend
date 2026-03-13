@@ -151,14 +151,14 @@ public sealed record CreateStockCommand(string Symbol, string CompanyName, decim
 
 **Queries** (Read-Only)
 ```csharp
-public sealed record GetStocksQuery() 
-    : IRequest<IEnumerable<StockDto>>;
+public sealed record GetStocksQuery(StockQueryParameters QueryParameters) 
+    : IRequest<PagedResult<GetStockResponseDto>>;
 ```
 
 Dispatched via MediatR:
 ```csharp
 var id = await _mediator.Send(new CreateStockCommand(...));
-var stocks = await _mediator.Send(new GetStocksQuery());
+var stocks = await _mediator.Send(new GetStocksQuery(new StockQueryParameters()));
 ```
 
 ## 🗄️ Database
@@ -192,7 +192,7 @@ Server=(local);Database=FinSharkDb;Trusted_Connection=true;TrustServerCertificat
 | GET | `/api/stocks` | Get all stocks |
 | POST | `/api/stocks` | Create new stock |
 | GET | `/api/stocks/{id}` | Get stock by ID |
-| PUT | `/api/stocks/{id}` | Update stock |
+| PATCH | `/api/stocks/{id}` | Update stock |
 | DELETE | `/api/stocks/{id}` | Delete stock |
 
 ### Request/Response Example

@@ -1,4 +1,4 @@
-namespace FinShark.Domain.Exceptions;
+﻿namespace FinShark.Domain.Exceptions;
 
 /// <summary>
 /// Exception thrown when a comment is not found
@@ -8,6 +8,6 @@ public sealed class CommentNotFoundException : FinSharkException
     public CommentNotFoundException(string message)
         : base(message)
     {
-        ErrorCode = 1002;
+        ErrorCode = 1001;
     }
 }
