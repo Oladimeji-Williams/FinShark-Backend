@@ -1,5 +1,5 @@
 using FluentAssertions;
-using FinShark.Application.Dtos;
+using FinShark.Application.Stocks.Commands.CreateStock;
 using FinShark.Application.Stocks.Validators;
 using FinShark.Domain.ValueObjects;
 using Xunit;
@@ -21,16 +21,14 @@ public class CreateStockValidatorTests
     public async Task ValidateAsync_WithValidSymbol_ShouldPass()
     {
         // Arrange
-        var dto = new CreateStockRequestDto 
-        { 
-            Symbol = "AAPL",
-            CompanyName = "Apple Inc.",
-            CurrentPrice = 150.50m,
-            Industry = IndustryType.Technology
-        };
+        var command = new CreateStockCommand(
+            "AAPL",
+            "Apple Inc.",
+            150.50m,
+            IndustryType.Technology);
 
         // Act
-        var result = await _validator.ValidateAsync(dto);
+        var result = await _validator.ValidateAsync(command);
 
         // Assert
         result.IsValid.Should().BeTrue();
@@ -40,15 +38,13 @@ public class CreateStockValidatorTests
     public async Task ValidateAsync_WithEmptySymbol_ShouldFail()
     {
         // Arrange
-        var dto = new CreateStockRequestDto 
-        { 
-            Symbol = "",
-            CompanyName = "Apple Inc.",
-            CurrentPrice = 150.50m
-        };
+        var command = new CreateStockCommand(
+            "",
+            "Apple Inc.",
+            150.50m);
 
         // Act
-        var result = await _validator.ValidateAsync(dto);
+        var result = await _validator.ValidateAsync(command);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -59,15 +55,13 @@ public class CreateStockValidatorTests
     public async Task ValidateAsync_WithSymbolExceedingMaxLength_ShouldFail()
     {
         // Arrange
-        var dto = new CreateStockRequestDto 
-        { 
-            Symbol = "VERYLONGSYMBOL", // 14 characters, max is 10
-            CompanyName = "Apple Inc.",
-            CurrentPrice = 150.50m
-        };
+        var command = new CreateStockCommand(
+            "VERYLONGSYMBOL", // 14 characters, max is 10
+            "Apple Inc.",
+            150.50m);
 
         // Act
-        var result = await _validator.ValidateAsync(dto);
+        var result = await _validator.ValidateAsync(command);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -81,15 +75,13 @@ public class CreateStockValidatorTests
     public async Task ValidateAsync_WithValidSymbolFormats_ShouldPass(string symbol)
     {
         // Arrange
-        var dto = new CreateStockRequestDto 
-        { 
-            Symbol = symbol,
-            CompanyName = "Test Company",
-            CurrentPrice = 100m
-        };
+        var command = new CreateStockCommand(
+            symbol,
+            "Test Company",
+            100m);
 
         // Act
-        var result = await _validator.ValidateAsync(dto);
+        var result = await _validator.ValidateAsync(command);
 
         // Assert
         result.IsValid.Should().BeTrue();
@@ -102,15 +94,13 @@ public class CreateStockValidatorTests
     public async Task ValidateAsync_WithInvalidSymbolFormat_ShouldFail(string symbol)
     {
         // Arrange
-        var dto = new CreateStockRequestDto 
-        { 
-            Symbol = symbol,
-            CompanyName = "Test Company",
-            CurrentPrice = 100m
-        };
+        var command = new CreateStockCommand(
+            symbol,
+            "Test Company",
+            100m);
 
         // Act
-        var result = await _validator.ValidateAsync(dto);
+        var result = await _validator.ValidateAsync(command);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -124,15 +114,13 @@ public class CreateStockValidatorTests
     public async Task ValidateAsync_WithEmptyCompanyName_ShouldFail()
     {
         // Arrange
-        var dto = new CreateStockRequestDto 
-        { 
-            Symbol = "AAPL",
-            CompanyName = "",
-            CurrentPrice = 150.50m
-        };
+        var command = new CreateStockCommand(
+            "AAPL",
+            "",
+            150.50m);
 
         // Act
-        var result = await _validator.ValidateAsync(dto);
+        var result = await _validator.ValidateAsync(command);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -142,15 +130,13 @@ public class CreateStockValidatorTests
     public async Task ValidateAsync_WithCompanyNameExceedingMaxLength_ShouldFail()
     {
         // Arrange
-        var dto = new CreateStockRequestDto 
-        { 
-            Symbol = "AAPL",
-            CompanyName = new string('A', 256), // 256 characters, max is 255
-            CurrentPrice = 150.50m
-        };
+        var command = new CreateStockCommand(
+            "AAPL",
+            new string('A', 256), // 256 characters, max is 255
+            150.50m);
 
         // Act
-        var result = await _validator.ValidateAsync(dto);
+        var result = await _validator.ValidateAsync(command);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -166,15 +152,13 @@ public class CreateStockValidatorTests
     public async Task ValidateAsync_WithInvalidPrice_ShouldFail(decimal price)
     {
         // Arrange
-        var dto = new CreateStockRequestDto 
-        { 
-            Symbol = "AAPL",
-            CompanyName = "Apple Inc.",
-            CurrentPrice = price
-        };
+        var command = new CreateStockCommand(
+            "AAPL",
+            "Apple Inc.",
+            price);
 
         // Act
-        var result = await _validator.ValidateAsync(dto);
+        var result = await _validator.ValidateAsync(command);
 
         // Assert
         result.IsValid.Should().BeFalse();
@@ -187,15 +171,13 @@ public class CreateStockValidatorTests
     public async Task ValidateAsync_WithValidPrice_ShouldPass(decimal price)
     {
         // Arrange
-        var dto = new CreateStockRequestDto 
-        { 
-            Symbol = "AAPL",
-            CompanyName = "Apple Inc.",
-            CurrentPrice = price
-        };
+        var command = new CreateStockCommand(
+            "AAPL",
+            "Apple Inc.",
+            price);
 
         // Act
-        var result = await _validator.ValidateAsync(dto);
+        var result = await _validator.ValidateAsync(command);
 
         // Assert
         result.IsValid.Should().BeTrue();
@@ -209,17 +191,15 @@ public class CreateStockValidatorTests
     public async Task ValidateAsync_WithCompleteValidRequest_ShouldPass()
     {
         // Arrange
-        var dto = new CreateStockRequestDto 
-        { 
-            Symbol = "AAPL",
-            CompanyName = "Apple Inc.",
-            CurrentPrice = 150.50m,
-            Industry = IndustryType.Technology,
-            MarketCap = 2800000000000
-        };
+        var command = new CreateStockCommand(
+            "AAPL",
+            "Apple Inc.",
+            150.50m,
+            IndustryType.Technology,
+            2800000000000);
 
         // Act
-        var result = await _validator.ValidateAsync(dto);
+        var result = await _validator.ValidateAsync(command);
 
         // Assert
         result.IsValid.Should().BeTrue();

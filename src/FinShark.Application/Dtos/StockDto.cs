@@ -6,7 +6,7 @@ using FinShark.Domain.ValueObjects;
 /// Response DTO for stock creation
 /// Returns the newly created stock's ID
 /// </summary>
-public sealed class CreateStockResponseDto
+public sealed record CreateStockResponseDto
 {
     public required int Id { get; init; }
 }
@@ -16,7 +16,7 @@ public sealed class CreateStockResponseDto
 /// <summary>
 /// Data Transfer Object for Stock entity (Read/Get operations)
 /// </summary>
-public sealed class GetStockResponseDto
+public sealed record GetStockResponseDto
 {
     public required int Id { get; init; }
     public required string Symbol { get; init; }
@@ -32,7 +32,7 @@ public sealed class GetStockResponseDto
 /// <summary>
 /// Request DTO for creating a new Stock
 /// </summary>
-public sealed class CreateStockRequestDto
+public sealed record CreateStockRequestDto
 {
     public required string Symbol { get; init; }
     public required string CompanyName { get; init; }
@@ -44,7 +44,7 @@ public sealed class CreateStockRequestDto
 /// <summary>
 /// DTO for updating an existing stock - supports partial updates with optional fields
 /// </summary>
-public sealed class UpdateStockRequestDto
+public sealed record UpdateStockRequestDto
 {
     /// <summary>
     /// Stock symbol (optional for partial updates)

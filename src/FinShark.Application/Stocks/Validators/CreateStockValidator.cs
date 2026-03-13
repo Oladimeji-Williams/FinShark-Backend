@@ -1,13 +1,13 @@
-﻿using FinShark.Application.Dtos;
+using FinShark.Application.Stocks.Commands.CreateStock;
 using FluentValidation;
 
 namespace FinShark.Application.Stocks.Validators;
 
 /// <summary>
-/// Validator for creating a new Stock using the CreateStockRequestDto
+/// Validator for creating a new Stock using the CreateStockCommand
 /// Ensures data integrity before entity creation
 /// </summary>
-public sealed class CreateStockValidator : AbstractValidator<CreateStockRequestDto>
+public sealed class CreateStockValidator : AbstractValidator<CreateStockCommand>
 {
     public CreateStockValidator()
     {
@@ -31,8 +31,7 @@ public sealed class CreateStockValidator : AbstractValidator<CreateStockRequestD
             .LessThanOrEqualTo(decimal.MaxValue)
                 .WithMessage("Current price is too large.");
 
-        // Industry is an enum - validation is automatic via JSON deserialization
-        // No additional validation needed
+        // Industry is a value object - validation happens during deserialization/construction
 
         RuleFor(x => x.MarketCap)
             .GreaterThanOrEqualTo(0)

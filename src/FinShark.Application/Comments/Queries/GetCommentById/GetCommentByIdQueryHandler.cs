@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using FinShark.Application.Dtos;
 using FinShark.Application.Mappers;
 using FinShark.Domain.Repositories;
@@ -24,7 +24,7 @@ public sealed class GetCommentByIdQueryHandler : IRequestHandler<GetCommentByIdQ
     {
         _logger.LogInformation("Getting comment {CommentId}", request.Id);
 
-        var comment = await _commentRepository.GetByIdAsync(request.Id);
+        var comment = await _commentRepository.GetByIdAsync(request.Id, cancellationToken);
         if (comment == null)
             throw new CommentNotFoundException($"Comment with ID {request.Id} not found");
 

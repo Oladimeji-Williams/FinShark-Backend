@@ -1,5 +1,6 @@
-using FinShark.Domain.Entities;
+﻿using FinShark.Domain.Entities;
 using FinShark.Domain.Interfaces;
+using FinShark.Domain.Queries;
 
 namespace FinShark.Domain.Repositories;
 
@@ -32,4 +33,20 @@ public interface IStockRepository : IRepository<Stock>
     /// <param name="cancellationToken">Cancellation token for async operations</param>
     /// <returns>Stocks with comments</returns>
     Task<IEnumerable<Stock>> GetAllWithCommentsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves stocks with optional filtering, sorting, and pagination
+    /// </summary>
+    /// <param name="queryParameters">Query parameters for filtering, sorting, and pagination</param>
+    /// <param name="cancellationToken">Cancellation token for async operations</param>
+    /// <returns>Filtered stocks with comments</returns>
+    Task<IEnumerable<Stock>> GetAllWithCommentsAsync(StockQueryParameters queryParameters, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves count of stocks with optional filtering
+    /// </summary>
+    /// <param name="queryParameters">Query parameters for filtering</param>
+    /// <param name="cancellationToken">Cancellation token for async operations</param>
+    /// <returns>Total count of filtered stocks</returns>
+    Task<int> GetCountAsync(StockQueryParameters queryParameters, CancellationToken cancellationToken = default);
 }

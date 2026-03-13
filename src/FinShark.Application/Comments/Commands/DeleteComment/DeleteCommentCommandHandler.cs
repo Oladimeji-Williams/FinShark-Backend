@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using FinShark.Domain.Repositories;
 using FinShark.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -23,12 +23,12 @@ public sealed class DeleteCommentCommandHandler : IRequestHandler<DeleteCommentC
         _logger.LogInformation("Deleting comment {CommentId}", request.Id);
 
         // Get comment
-        var comment = await _commentRepository.GetByIdAsync(request.Id);
+        var comment = await _commentRepository.GetByIdAsync(request.Id, cancellationToken);
         if (comment == null)
             throw new CommentNotFoundException($"Comment with ID {request.Id} not found");
 
         // Delete comment
-        await _commentRepository.DeleteAsync(comment);
+        await _commentRepository.DeleteAsync(comment, cancellationToken);
 
         _logger.LogInformation("Comment {CommentId} deleted successfully", request.Id);
 

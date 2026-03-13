@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using FinShark.Domain.Entities;
 using FinShark.Domain.Repositories;
 using FinShark.Domain.Exceptions;
@@ -30,12 +30,13 @@ public sealed class CreateCommentCommandHandler : IRequestHandler<CreateCommentC
         _logger.LogInformation("Creating comment for stock {StockId}", request.StockId);
 
         // Verify stock exists
-        var stock = await _stockRepository.GetByIdAsync(request.StockId);
+        var stock = await _stockRepository.GetByIdAsync(request.StockId, cancellationToken);
         if (stock == null)
             throw new StockNotFoundException($"Stock with ID {request.StockId} not found");
 
         // Create comment entity
         var comment = new Comment(
+            request.UserId,
             request.StockId,
             request.Title,
             request.Content,
@@ -43,7 +44,7 @@ public sealed class CreateCommentCommandHandler : IRequestHandler<CreateCommentC
         );
 
         // Add to repository
-        await _commentRepository.AddAsync(comment);
+        await _commentRepository.AddAsync(comment, cancellationToken);
 
         _logger.LogInformation("Comment created successfully with ID {CommentId}", comment.Id);
 

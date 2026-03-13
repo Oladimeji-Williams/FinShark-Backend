@@ -10,4 +10,4 @@ public sealed record GetCommentsByStockIdQuery(
     int StockId,
     int? PageNumber = null,
     int? PageSize = null
-) : IRequest<IEnumerable<GetCommentResponseDto>>;
+) : IRequest<PagedResult<GetCommentResponseDto>>;

@@ -1,4 +1,4 @@
-# Testing FinShark API
+﻿# Testing FinShark API
 
 ## 1. Database Setup & Migrations
 
@@ -113,10 +113,10 @@ Expected Response (200 OK):
 }
 ```
 
-### D. Update a Stock (PUT)
+### D. Update a Stock (PATCH)
 
 ```bash
-curl -X PUT "https://localhost:5001/api/stocks/1" \
+curl -X PATCH "https://localhost:5001/api/stocks/1" \
   -H "Content-Type: application/json" \
   -d '{
     "symbol": "AAPL",
@@ -157,10 +157,9 @@ Expected Response (200 OK):
 ### A. Create a Comment (POST)
 
 ```bash
-curl -X POST "https://localhost:5001/api/comments" \
+curl -X POST "https://localhost:5001/api/stocks/1/comments" \
   -H "Content-Type: application/json" \
   -d '{
-    "stockId": 1,
     "title": "Great Investment",
     "content": "This stock has strong fundamentals and great growth potential over the long term",
     "rating": 5
@@ -187,17 +186,27 @@ Expected Response (200 OK):
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": 1,
-      "stockId": 1,
-      "title": "Great Investment",
-      "content": "This stock has strong fundamentals and great growth potential over the long term",
-      "rating": 5,
-      "createdAt": "2026-03-11T14:20:00Z",
-      "updatedAt": null
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "stockId": 1,
+        "title": "Great Investment",
+        "content": "This stock has strong fundamentals and great growth potential over the long term",
+        "rating": 5,
+        "createdAt": "2026-03-11T14:20:00Z",
+        "updatedAt": null
+      }
+    ],
+    "pagination": {
+      "totalCount": 1,
+      "pageNumber": 1,
+      "pageSize": 1,
+      "totalPages": 1,
+      "hasNextPage": false,
+      "hasPreviousPage": false
     }
-  ],
+  },
   "message": "Comments retrieved successfully"
 }
 ```
@@ -229,7 +238,7 @@ Expected Response (200 OK):
 ### D. Get Comments by Stock (GET)
 
 ```bash
-curl -X GET "https://localhost:5001/api/comments/stock/1" \
+curl -X GET "https://localhost:5001/api/stocks/1/comments" \
   -H "Content-Type: application/json"
 ```
 
@@ -237,25 +246,35 @@ Expected Response (200 OK):
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": 1,
-      "stockId": 1,
-      "title": "Great Investment",
-      "content": "This stock has strong fundamentals and great growth potential over the long term",
-      "rating": 5,
-      "createdAt": "2026-03-11T14:20:00Z",
-      "updatedAt": null
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "stockId": 1,
+        "title": "Great Investment",
+        "content": "This stock has strong fundamentals and great growth potential over the long term",
+        "rating": 5,
+        "createdAt": "2026-03-11T14:20:00Z",
+        "updatedAt": null
+      }
+    ],
+    "pagination": {
+      "totalCount": 1,
+      "pageNumber": 1,
+      "pageSize": 1,
+      "totalPages": 1,
+      "hasNextPage": false,
+      "hasPreviousPage": false
     }
-  ],
+  },
   "message": "Comments retrieved successfully"
 }
 ```
 
-### E. Update a Comment (PUT)
+### E. Update a Comment (PATCH)
 
 ```bash
-curl -X PUT "https://localhost:5001/api/comments/1" \
+curl -X PATCH "https://localhost:5001/api/comments/1" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Excellent Investment",
@@ -363,7 +382,7 @@ GET {{baseUrl}}/api/stocks/1
 Content-Type: {{contentType}}
 
 ### Update Stock
-PUT {{baseUrl}}/api/stocks/1
+PATCH {{baseUrl}}/api/stocks/1
 Content-Type: {{contentType}}
 
 {

@@ -243,7 +243,7 @@ public class StockTests
     {
         // Arrange
         var stock = new Stock("AAPL", "Apple Inc.", 150.50m);
-        var comment = new Comment(stock.Id, "Great stock", "Strong performer", Rating.From(5));
+        var comment = new Comment("test-user", stock.Id, "Great stock", "Strong performer", Rating.From(5));
 
         // Act
         stock.Comments.Add(comment);

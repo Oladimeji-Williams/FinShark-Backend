@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using FinShark.Application.Stocks.Commands.CreateStock;
 using FinShark.Application.Stocks.Queries.GetStocks;
@@ -8,6 +8,8 @@ using FinShark.Domain.Repositories;
 using FinShark.Persistence;
 using FinShark.Persistence.Repositories;
 using FinShark.Domain.ValueObjects;
+using FinShark.Domain.Queries;
+using FinShark.Domain.Exceptions;
 using Xunit;
 using MediatR;
 
@@ -64,7 +66,7 @@ public class CreateStockCommandHandlerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Handle_WithDuplicateSymbol_ShouldThrowInvalidOperationException()
+    public async Task Handle_WithDuplicateSymbol_ShouldThrowStockAlreadyExistsException()
     {
         // Arrange
         var stock = new Stock("MSFT", "Microsoft Corp.", 380.00m);
@@ -80,7 +82,7 @@ public class CreateStockCommandHandlerTests : IAsyncLifetime
         // Act & Assert
         await _handler.Invoking(h => h.Handle(command, CancellationToken.None))
             .Should()
-            .ThrowAsync<InvalidOperationException>()
+            .ThrowAsync<StockAlreadyExistsException>()
             .WithMessage("*already exists*");
     }
 
@@ -143,34 +145,86 @@ public class GetStocksQueryHandlerTests : IAsyncLifetime
     public async Task Handle_ShouldReturnAllStocks()
     {
         // Arrange
-        var query = new GetStocksQuery();
+        var query = new GetStocksQuery(new StockQueryParameters());
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().HaveCount(3);
+        result.Items.Should().HaveCount(3);
+        result.Pagination.TotalCount.Should().Be(3);
+        result.Pagination.PageNumber.Should().Be(1);
+        result.Pagination.PageSize.Should().Be(3);
+        result.Pagination.TotalPages.Should().Be(1);
+        result.Pagination.HasNextPage.Should().BeFalse();
+        result.Pagination.HasPreviousPage.Should().BeFalse();
     }
 
     [Fact]
     public async Task Handle_ShouldMaptoDtosCorrectly()
     {
         // Arrange
-        var query = new GetStocksQuery();
+        var query = new GetStocksQuery(new StockQueryParameters());
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
-        var dtoList = result.ToList();
+        var dtoList = result.Items.ToList();
 
         // Assert
         dtoList[0].Symbol.Should().Be("AAPL");
         dtoList[0].Industry.Should().Be(IndustryType.Technology);
-        dtoList[1].Symbol.Should().Be("MSFT");
-        dtoList[2].Industry.Should().Be(IndustryType.Finance);
+        dtoList[1].Symbol.Should().Be("JPM");
+        dtoList[1].Industry.Should().Be(IndustryType.Finance);
+        dtoList[2].Symbol.Should().Be("MSFT");
+        dtoList[2].Industry.Should().Be(IndustryType.Technology);
+    }
+
+    [Fact]
+    public async Task Handle_WithIndustryFilter_ShouldReturnOnlyMatching()
+    {
+        // Arrange
+        var parameters = new StockQueryParameters
+        {
+            Industry = IndustryType.Technology
+        };
+        var query = new GetStocksQuery(parameters);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Items.Should().HaveCount(2);
+        result.Items.All(s => s.Industry == IndustryType.Technology).Should().BeTrue();
+        result.Pagination.TotalCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Handle_WithSortingAndPagination_ShouldReturnExpectedPage()
+    {
+        // Arrange
+        var parameters = new StockQueryParameters
+        {
+            SortBy = StockSortBy.CurrentPrice,
+            SortDirection = SortDirection.Desc,
+            PageNumber = 1,
+            PageSize = 2
+        };
+        var query = new GetStocksQuery(parameters);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Items.Should().HaveCount(2);
+        result.Items[0].Symbol.Should().Be("MSFT");
+        result.Items[1].Symbol.Should().Be("JPM");
+        result.Pagination.TotalCount.Should().Be(3);
+        result.Pagination.PageNumber.Should().Be(1);
+        result.Pagination.PageSize.Should().Be(2);
+        result.Pagination.TotalPages.Should().Be(2);
     }
 }
-
 public class MockLogger<T> : Microsoft.Extensions.Logging.ILogger<T>
 {
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;

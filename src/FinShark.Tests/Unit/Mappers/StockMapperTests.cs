@@ -22,9 +22,9 @@ public class StockMapperTests
             MarketCap = 2800000000000
         };
         stock.GetType().GetProperty("Id")?.SetValue(stock, 1);
-        stock.Comments.Add(new Comment(stock.Id, "Great stock", "Strong performer", Rating.From(5)));
-        stock.Comments.Add(new Comment(stock.Id, "Solid growth", "Consistent earnings", Rating.From(4)));
-        stock.Comments.Add(new Comment(stock.Id, "Watchlist", "Monitor next quarter", Rating.From(3)));
+        stock.Comments.Add(new Comment("test-user", stock.Id, "Great stock", "Strong performer", Rating.From(5)));
+        stock.Comments.Add(new Comment("test-user", stock.Id, "Solid growth", "Consistent earnings", Rating.From(4)));
+        stock.Comments.Add(new Comment("test-user", stock.Id, "Watchlist", "Monitor next quarter", Rating.From(3)));
 
         // Act
         var result = StockMapper.ToDto(stock);

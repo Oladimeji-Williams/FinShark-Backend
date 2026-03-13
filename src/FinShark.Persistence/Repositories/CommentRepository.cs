@@ -11,6 +11,9 @@ namespace FinShark.Persistence.Repositories;
 /// </summary>
 public sealed class CommentRepository : ICommentRepository
 {
+    private const int DefaultPageSize = 20;
+    private const int MaxPageSize = 100;
+
     private readonly AppDbContext _context;
     private readonly ILogger<CommentRepository> _logger;
 
@@ -26,13 +29,32 @@ public sealed class CommentRepository : ICommentRepository
         return await _context.Comments.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
-    public async Task<IEnumerable<Comment>> GetByStockIdAsync(int stockId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Comment>> GetByStockIdAsync(
+        int stockId,
+        int? pageNumber = null,
+        int? pageSize = null,
+        CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Fetching comments for stock {StockId}", stockId);
-        return await _context.Comments
+        _logger.LogInformation("Fetching comments for stock {StockId}. Page: {PageNumber}, PageSize: {PageSize}",
+            stockId, pageNumber, pageSize);
+
+        var query = _context.Comments
             .Where(c => c.StockId == stockId)
-            .OrderByDescending(c => c.Created)
-            .ToListAsync(cancellationToken);
+            .OrderByDescending(c => c.Created);
+
+        if (pageNumber.HasValue || pageSize.HasValue)
+        {
+            var resolvedPageNumber = Math.Max(1, pageNumber.GetValueOrDefault(1));
+            var resolvedPageSize = Math.Clamp(pageSize.GetValueOrDefault(DefaultPageSize), 1, MaxPageSize);
+            var skip = (resolvedPageNumber - 1) * resolvedPageSize;
+
+            return await query
+                .Skip(skip)
+                .Take(resolvedPageSize)
+                .ToListAsync(cancellationToken);
+        }
+
+        return await query.ToListAsync(cancellationToken);
     }
 
     public Task<IEnumerable<Comment>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -47,26 +69,34 @@ public sealed class CommentRepository : ICommentRepository
     {
         _logger.LogInformation("Fetching all comments. Page: {PageNumber}, PageSize: {PageSize}", pageNumber, pageSize);
 
-        var query = _context.Comments.AsQueryable();
+        var query = _context.Comments
+            .OrderByDescending(c => c.Created)
+            .AsQueryable();
 
-        if (pageNumber.HasValue && pageSize.HasValue)
+        if (pageNumber.HasValue || pageSize.HasValue)
         {
-            var skip = (pageNumber.Value - 1) * pageSize.Value;
+            var resolvedPageNumber = Math.Max(1, pageNumber.GetValueOrDefault(1));
+            var resolvedPageSize = Math.Clamp(pageSize.GetValueOrDefault(DefaultPageSize), 1, MaxPageSize);
+            var skip = (resolvedPageNumber - 1) * resolvedPageSize;
+
             return await query
-                .OrderByDescending(c => c.Created)
                 .Skip(skip)
-                .Take(pageSize.Value)
+                .Take(resolvedPageSize)
                 .ToListAsync(cancellationToken);
         }
 
-        return await query
-            .OrderByDescending(c => c.Created)
-            .ToListAsync(cancellationToken);
+        return await query.ToListAsync(cancellationToken);
     }
 
     public async Task<int> GetCountAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Comments.CountAsync(cancellationToken);
+    }
+
+    public async Task<int> GetCountByStockIdAsync(int stockId, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Counting comments for stock {StockId}", stockId);
+        return await _context.Comments.CountAsync(c => c.StockId == stockId, cancellationToken);
     }
 
     public async Task AddAsync(Comment comment, CancellationToken cancellationToken = default)

@@ -1,5 +1,6 @@
 using FinShark.Domain.Entities;
 using FinShark.Persistence.EntityConfigurations;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinShark.Persistence;
@@ -9,7 +10,7 @@ namespace FinShark.Persistence;
 /// Manages database operations and orchestrates entity configurations
 /// Automatically handles audit timestamps (Created, Modified)
 /// </summary>
-public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<ApplicationUser>(options)
 {
     public DbSet<Stock> Stocks { get; set; } = null!;
     public DbSet<Comment> Comments { get; set; } = null!;
@@ -21,6 +22,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         // Configure entities using dedicated configuration classes
         modelBuilder.ConfigureStock();
         modelBuilder.ConfigureComment();
+
+        // Ensure Email and UserName are unique
+        modelBuilder.Entity<ApplicationUser>()
+            .HasIndex(u => u.NormalizedEmail)
+            .IsUnique()
+            .HasDatabaseName("EmailIndex");
     }
 
     /// <summary>

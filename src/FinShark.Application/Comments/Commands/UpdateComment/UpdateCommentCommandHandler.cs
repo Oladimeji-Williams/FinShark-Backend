@@ -1,7 +1,8 @@
-using MediatR;
+﻿using MediatR;
 using FinShark.Domain.Repositories;
 using FinShark.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
+using FinShark.Application.Mappers;
 using FinShark.Application.Comments.Commands.UpdateComment;
 
 namespace FinShark.Application.Comments.Commands.UpdateComment;
@@ -23,15 +24,15 @@ public sealed class UpdateCommentCommandHandler : IRequestHandler<UpdateCommentC
         _logger.LogInformation("Updating comment {CommentId}", request.Id);
 
         // Get existing comment
-        var comment = await _commentRepository.GetByIdAsync(request.Id);
+        var comment = await _commentRepository.GetByIdAsync(request.Id, cancellationToken);
         if (comment == null)
             throw new CommentNotFoundException($"Comment with ID {request.Id} not found");
 
-        // Update comment
-        comment.Update(request.Title, request.Content, request.Rating);
+        // Update comment via mapper (manual mapping for explicit control)
+        CommentMapper.UpdateEntity(comment, request);
 
         // Save changes
-        await _commentRepository.UpdateAsync(comment);
+        await _commentRepository.UpdateAsync(comment, cancellationToken);
 
         _logger.LogInformation("Comment {CommentId} updated successfully", request.Id);
 

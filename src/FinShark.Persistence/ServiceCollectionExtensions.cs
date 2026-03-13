@@ -1,6 +1,10 @@
+using FinShark.Application.Auth.Services;
+using FinShark.Domain.Entities;
 using FinShark.Domain.Repositories;
 using FinShark.Persistence.Repositories;
 using FinShark.Persistence.Seeding;
+using FinShark.Persistence.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,9 +44,38 @@ public static class ServiceCollectionExtensions
             });
         });
 
+        // Register Identity services
+        services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+        {
+            // Password settings
+            options.Password.RequireDigit = true;
+            options.Password.RequiredLength = 8;
+            options.Password.RequireNonAlphanumeric = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireLowercase = true;
+
+            // Lockout settings
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.AllowedForNewUsers = true;
+
+            // User settings
+            options.User.AllowedUserNameCharacters =
+                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+            options.User.RequireUniqueEmail = true;
+
+            // Sign-in settings
+            options.SignIn.RequireConfirmedEmail = false; // Set to true in production
+        })
+        .AddEntityFrameworkStores<AppDbContext>()
+        .AddDefaultTokenProviders();
+
         // Register repositories
         services.AddScoped<IStockRepository, StockRepository>();
         services.AddScoped<ICommentRepository, CommentRepository>();
+
+        // Register auth service
+        services.AddScoped<IAuthService, AuthService>();
 
         // Register data seeder
         services.AddScoped<DataSeeder>();

@@ -1,4 +1,5 @@
 using FinShark.Application.Dtos;
+using FinShark.Application.Comments.Commands.UpdateComment;
 using FinShark.Domain.Entities;
 
 namespace FinShark.Application.Mappers;
@@ -39,15 +40,46 @@ public sealed class CommentMapper
     /// <summary>
     /// Maps CreateCommentRequestDto to Comment entity
     /// </summary>
-    public static Comment ToEntity(int stockId, CreateCommentRequestDto request)
+    public static Comment ToEntity(string userId, int stockId, CreateCommentRequestDto request)
     {
         if (request == null) throw new ArgumentNullException(nameof(request));
 
         return new Comment(
+            userId,
             stockId,
             request.Title,
             request.Content,
             request.Rating
+        );
+    }
+
+    /// <summary>
+    /// Updates an existing Comment entity from UpdateCommentRequestDto
+    /// </summary>
+    public static void UpdateEntity(Comment comment, UpdateCommentRequestDto request)
+    {
+        if (comment == null) throw new ArgumentNullException(nameof(comment));
+        if (request == null) throw new ArgumentNullException(nameof(request));
+
+        comment.Update(
+            title: request.Title,
+            content: request.Content,
+            rating: request.Rating
+        );
+    }
+
+    /// <summary>
+    /// Updates an existing Comment entity from UpdateCommentCommand
+    /// </summary>
+    public static void UpdateEntity(Comment comment, UpdateCommentCommand command)
+    {
+        if (comment == null) throw new ArgumentNullException(nameof(comment));
+        if (command == null) throw new ArgumentNullException(nameof(command));
+
+        comment.Update(
+            title: command.Title,
+            content: command.Content,
+            rating: command.Rating
         );
     }
 }

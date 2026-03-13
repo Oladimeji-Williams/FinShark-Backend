@@ -5,7 +5,7 @@ using FinShark.Domain.ValueObjects;
 /// <summary>
 /// Data Transfer Object for Comment entity (Read/Get operations)
 /// </summary>
-public sealed class GetCommentResponseDto
+public sealed record GetCommentResponseDto
 {
     /// <summary>
     /// Unique identifier for the comment
@@ -46,13 +46,8 @@ public sealed class GetCommentResponseDto
 /// <summary>
 /// Request DTO for creating a new Comment
 /// </summary>
-public sealed class CreateCommentRequestDto
+public sealed record CreateCommentRequestDto
 {
-    /// <summary>
-    /// Stock ID that this comment is associated with
-    /// </summary>
-    public required int StockId { get; init; }
-
     /// <summary>
     /// Comment title (3-200 characters)
     /// </summary>
@@ -72,7 +67,7 @@ public sealed class CreateCommentRequestDto
 /// <summary>
 /// Request DTO for updating an existing comment - supports partial updates with optional fields
 /// </summary>
-public sealed class UpdateCommentRequestDto
+public sealed record UpdateCommentRequestDto
 {
     /// <summary>
     /// Comment title (optional for partial updates)

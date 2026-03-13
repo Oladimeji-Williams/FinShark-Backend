@@ -1,5 +1,6 @@
 using FinShark.Domain.Entities;
 using FinShark.Domain.ValueObjects;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace FinShark.Persistence.Seeding;
@@ -10,11 +11,16 @@ namespace FinShark.Persistence.Seeding;
 public sealed class DataSeeder
 {
     private readonly AppDbContext _context;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<DataSeeder> _logger;
 
-    public DataSeeder(AppDbContext context, ILogger<DataSeeder> logger)
+    public DataSeeder(
+        AppDbContext context,
+        UserManager<ApplicationUser> userManager,
+        ILogger<DataSeeder> logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
+        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -34,6 +40,34 @@ public sealed class DataSeeder
             }
 
             _logger.LogInformation("Starting database seeding with dummy data...");
+
+            // Create a default user for comments
+            var defaultUser = await _userManager.FindByEmailAsync("seeduser@example.com");
+            if (defaultUser == null)
+            {
+                defaultUser = new ApplicationUser
+                {
+                    UserName = "seeduser@example.com",
+                    Email = "seeduser@example.com",
+                    FirstName = "Seed",
+                    LastName = "User",
+                    EmailConfirmed = true
+                };
+
+                var result = await _userManager.CreateAsync(defaultUser, "SeedPassword123!");
+                if (!result.Succeeded)
+                {
+                    _logger.LogError("Failed to create seed user: {Errors}",
+                        string.Join(", ", result.Errors.Select(e => e.Description)));
+                    throw new InvalidOperationException("Failed to create seed user");
+                }
+
+                _logger.LogInformation("Created default user for seeding");
+            }
+            else
+            {
+                _logger.LogInformation("Default seed user already exists");
+            }
 
             var stocks = new List<Stock>
             {
@@ -100,12 +134,14 @@ public sealed class DataSeeder
             foreach (var stock in stocks)
             {
                 comments.Add(new Comment(
+                    defaultUser.Id,
                     stock.Id,
                     $"{stock.Symbol} outlook",
                     "Baseline view based on current fundamentals.",
                     Rating.From(4)));
 
                 comments.Add(new Comment(
+                    defaultUser.Id,
                     stock.Id,
                     $"{stock.Symbol} risk",
                     "Monitor volatility and macro headwinds.",

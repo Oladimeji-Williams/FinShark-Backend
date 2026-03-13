@@ -7,18 +7,22 @@ using FinShark.Domain.ValueObjects;
 /// </summary>
 public sealed class Comment : BaseEntity
 {
+    public string UserId { get; set; } = null!;
     public int StockId { get; set; }
     public string Title { get; set; } = null!;
     public string Content { get; set; } = null!;
     public Rating Rating { get; private set; }
     
-    // Navigation property
+    // Navigation properties
+    public ApplicationUser User { get; set; } = null!;
     public Stock Stock { get; set; } = null!;
 
     private Comment() { } // EF Core
 
-    public Comment(int stockId, string title, string content, Rating rating)
+    public Comment(string userId, int stockId, string title, string content, Rating rating)
     {
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new ArgumentException("UserId is required", nameof(userId));
         if (string.IsNullOrWhiteSpace(title))
             throw new ArgumentException("Title is required", nameof(title));
         if (string.IsNullOrWhiteSpace(content))
@@ -26,6 +30,7 @@ public sealed class Comment : BaseEntity
         if (!rating.IsValid)
             throw new ArgumentException("Rating must be between 1 and 5", nameof(rating));
 
+        UserId = userId;
         StockId = stockId;
         Title = title;
         Content = content;

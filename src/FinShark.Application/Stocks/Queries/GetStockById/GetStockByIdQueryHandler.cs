@@ -1,6 +1,7 @@
-using MediatR;
+﻿using MediatR;
 using FinShark.Application.Dtos;
 using FinShark.Application.Mappers;
+using FinShark.Domain.Exceptions;
 using FinShark.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -34,7 +35,7 @@ public sealed class GetStockByIdQueryHandler : IRequestHandler<GetStockByIdQuery
         if (stock == null)
         {
             _logger.LogWarning("Stock not found with ID: {StockId}", request.Id);
-            throw new KeyNotFoundException($"Stock with ID {request.Id} not found.");
+            throw new StockNotFoundException($"Stock with ID {request.Id} not found.");
         }
 
         var dto = StockMapper.ToDto(stock);
