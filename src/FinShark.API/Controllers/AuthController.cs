@@ -77,6 +77,45 @@ public sealed class AuthController(IMediator mediator, IAuthService authService)
     }
 
     /// <summary>
+    /// Resend email confirmation token
+    /// </summary>
+    [HttpPost("resend-confirmation")]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> ResendEmailConfirmation(
+        [FromBody] ResendEmailConfirmationRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await authService.ResendEmailConfirmationAsync(request.Email);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<AuthResponseDto>.FailureResponse(result.Message ?? "Failed to send confirmation token", result.Errors ?? Array.Empty<string>()));
+        }
+
+        return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, "Email confirmation token created"));
+    }
+
+    /// <summary>
+    /// Confirm user email
+    /// </summary>
+    [HttpGet("confirm-email")]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> ConfirmEmail(
+        [FromQuery] string userId,
+        [FromQuery] string token,
+        CancellationToken cancellationToken)
+    {
+        var result = await authService.ConfirmEmailAsync(userId, token);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<AuthResponseDto>.FailureResponse(result.Message ?? "Email confirmation failed", result.Errors ?? Array.Empty<string>()));
+        }
+
+        return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, "Email confirmed successfully"));
+    }
+
+    /// <summary>
     /// Get the current user's profile
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
@@ -103,6 +142,41 @@ public sealed class AuthController(IMediator mediator, IAuthService authService)
         {
             return NotFound(ApiResponse<UserDto>.FailureResponse("User not found"));
         }
+    }
+
+    /// <summary>
+    /// Get all users (admin only)
+    /// </summary>
+    [HttpGet("admin/users")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<UserDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<UserDto>>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<UserDto>>), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<IEnumerable<UserDto>>>> GetAllUsers(CancellationToken cancellationToken)
+    {
+        var users = await authService.GetAllUsersAsync();
+        return Ok(ApiResponse<IEnumerable<UserDto>>.SuccessResponse(users, "Users retrieved successfully"));
+    }
+
+    /// <summary>
+    /// Assign a role to a user (admin only)
+    /// </summary>
+    [HttpPost("admin/assign-role")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> AssignRole([FromBody] AssignRoleRequestDto request)
+    {
+        var result = await authService.AssignRoleAsync(request);
+
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<AuthResponseDto>.FailureResponse(result.Message ?? "Failed to assign role", result.Errors ?? Array.Empty<string>()));
+        }
+
+        return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, result.Message ?? "Role assigned successfully"));
     }
 
     /// <summary>
@@ -137,5 +211,35 @@ public sealed class AuthController(IMediator mediator, IAuthService authService)
         }
 
         return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, "Profile updated successfully"));
+    }
+
+    /// <summary>
+    /// Change the current user's password
+    /// </summary>
+    [HttpPost("profile/change-password")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> ChangePassword(
+        [FromBody] ChangePasswordRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(ApiResponse<AuthResponseDto>.FailureResponse("User not authenticated"));
+        }
+
+        var result = await authService.ChangePasswordAsync(userId, request);
+
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<AuthResponseDto>.FailureResponse(
+                result.Message ?? "Password change failed",
+                result.Errors ?? Array.Empty<string>()));
+        }
+
+        return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, "Password changed successfully"));
     }
 }

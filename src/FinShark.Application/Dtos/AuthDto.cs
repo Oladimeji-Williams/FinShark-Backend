@@ -21,6 +21,14 @@ public sealed record UpdateProfileRequestDto(
 );
 
 /// <summary>
+/// Request DTO for changing the user's password
+/// </summary>
+public sealed record ChangePasswordRequestDto(
+    string CurrentPassword,
+    string NewPassword
+);
+
+/// <summary>
 /// Request DTO for user login
 /// </summary>
 public sealed record LoginRequestDto(
@@ -42,11 +50,26 @@ public sealed record AuthResponseDto(
 /// <summary>
 /// Response DTO for user information
 /// </summary>
+public sealed record AssignRoleRequestDto(
+    string UserId,
+    string Role
+);
+
+public sealed record EmailConfirmationRequestDto(
+    string UserId,
+    string Token
+);
+
+public sealed record ResendEmailConfirmationRequestDto(
+    string Email
+);
+
 public sealed record UserDto(
     string Id,
     string UserName,
     string Email,
     DateTime Created,
+    IEnumerable<string> Roles,
     string? FirstName = null,
     string? LastName = null,
     string? FullName = null,

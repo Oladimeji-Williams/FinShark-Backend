@@ -25,24 +25,38 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Priority: Environment Variable > appsettings.Development.json > throw error
-        var connectionString = Environment.GetEnvironmentVariable("FINSHARK_DB_CONNECTION")
-            ?? configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException(
-                "Connection string not found. Set FINSHARK_DB_CONNECTION environment variable or configure 'DefaultConnection' in appsettings.Development.json");
+        // Support using in-memory DB for tests.
+        var useInMemoryDb = bool.TryParse(Environment.GetEnvironmentVariable("FINSHARK_USE_INMEMORY_DB"), out var inMemoryFlag) && inMemoryFlag
+            || bool.TryParse(configuration["UseInMemoryDatabase"], out var configInMemory) && configInMemory;
 
-        // Register DbContext
-        services.AddDbContext<AppDbContext>(options =>
+        if (useInMemoryDb)
         {
-            options.UseSqlServer(connectionString, sqlOptions =>
+            services.AddDbContext<AppDbContext>(options =>
             {
-                sqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.GetName().Name);
-                sqlOptions.EnableRetryOnFailure(
-                    maxRetryCount: 3,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorNumbersToAdd: null);
+                options.UseInMemoryDatabase("FinSharkInMemoryDb");
             });
-        });
+        }
+        else
+        {
+            // Priority: Environment Variable > appsettings.Development.json > throw error
+            var connectionString = Environment.GetEnvironmentVariable("FINSHARK_DB_CONNECTION")
+                ?? configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException(
+                    "Connection string not found. Set FINSHARK_DB_CONNECTION environment variable or configure 'DefaultConnection' in appsettings.Development.json");
+
+            // Register DbContext
+            services.AddDbContext<AppDbContext>(options =>
+            {
+                options.UseSqlServer(connectionString, sqlOptions =>
+                {
+                    sqlOptions.MigrationsAssembly(typeof(AppDbContext).Assembly.GetName().Name);
+                    sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorNumbersToAdd: null);
+                });
+            });
+        }
 
         // Register Identity services
         services.AddIdentity<ApplicationUser, IdentityRole>(options =>

@@ -642,6 +642,247 @@ curl -X DELETE "https://localhost:5001/api/comments/1" \
 
 ---
 
+## Auth Endpoints
+
+### Change Password
+
+Allows an authenticated user to update their password.
+
+**Endpoint**: `PATCH /api/auth/profile/change-password`
+
+**Request Headers**:
+```
+Authorization: Bearer {jwt}
+Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "currentPassword": "OldPassword123!",
+  "newPassword": "NewStrongPassword123!",
+  "confirmPassword": "NewStrongPassword123!"
+}
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": true,
+  "message": "Password changed successfully",
+  "errors": null
+}
+```
+
+**Response (400 Bad Request)**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["Current password is required", "New password must be at least 8 characters", "New password and confirm password must match"]
+}
+```
+
+**Response (401 Unauthorized)**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["Invalid current password"]
+}
+```
+
+**Example cURL**:
+```bash
+curl -X PATCH "https://localhost:5001/api/auth/profile/change-password" \
+  -H "Authorization: Bearer {jwt}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentPassword": "OldPassword123!",
+    "newPassword": "NewStrongPassword123!",
+    "confirmPassword": "NewStrongPassword123!"
+  }'
+```
+
+---
+
+### Email Confirmation Endpoints
+
+#### Resend Confirmation Token
+
+Generates a new email confirmation token for the user. In production, this would send an email; here it returns the token for testing.
+
+**Endpoint**: `POST /api/auth/resend-confirmation`
+
+**Request Body**:
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": {
+    "token": "..."
+  },
+  "message": "Email confirmation token generated",
+  "errors": null
+}
+```
+
+**Response (400 Bad Request)**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["User not found", "Email already confirmed"]
+}
+```
+
+**Example cURL**:
+```bash
+curl -X POST "https://localhost:5001/api/auth/resend-confirmation" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com"}'
+```
+
+---
+
+#### Confirm Email
+
+Confirms an account using user ID and confirmation token.
+
+**Endpoint**: `GET /api/auth/confirm-email?userId={userId}&token={token}`
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": null,
+  "message": "Email confirmed successfully",
+  "errors": null
+}
+```
+
+**Response (400 Bad Request)**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["User not found", "Email confirmation failed"]
+}
+```
+
+---
+
+### Admin Role Endpoints
+
+These endpoints require `Admin` role authorization.
+
+#### Get All Users
+
+Retrieves all registered users for admin management.
+
+**Endpoint**: `GET /api/auth/users`
+
+**Request Headers**:
+```
+Authorization: Bearer {jwt}
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "...",
+      "username": "alice",
+      "email": "alice@example.com",
+      "role": "User"
+    }
+  ],
+  "message": "Users retrieved successfully",
+  "errors": null
+}
+```
+
+**Response (403 Forbidden)**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["Access denied"]
+}
+```
+
+**Example cURL**:
+```bash
+curl -X GET "https://localhost:5001/api/auth/users" \
+  -H "Authorization: Bearer {admin_jwt}"
+```
+
+#### Assign Role to User
+
+Updates a user’s role.
+
+**Endpoint**: `PATCH /api/auth/users/{userId}/role`
+
+**Path Parameters**:
+- `userId` (string, required): User ID
+
+**Request Headers**:
+```
+Authorization: Bearer {admin_jwt}
+Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "role": "Admin"
+}
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": true,
+  "message": "Role assigned successfully",
+  "errors": null
+}
+```
+
+**Response (400 Bad Request)**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["Role must be either 'User' or 'Admin'"]
+}
+```
+
+**Example cURL**:
+```bash
+curl -X PATCH "https://localhost:5001/api/auth/users/{userId}/role" \
+  -H "Authorization: Bearer {admin_jwt}" \
+  -H "Content-Type: application/json" \
+  -d '{"role":"Admin"}'
+```
+
+---
+
 ## Response Format
 
 All API responses follow a standardized format:
