@@ -12,15 +12,18 @@ public sealed class DataSeeder
 {
     private readonly AppDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ILogger<DataSeeder> _logger;
 
     public DataSeeder(
         AppDbContext context,
         UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager,
         ILogger<DataSeeder> logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+        _roleManager = roleManager ?? throw new ArgumentNullException(nameof(roleManager));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -40,6 +43,21 @@ public sealed class DataSeeder
             }
 
             _logger.LogInformation("Starting database seeding with dummy data...");
+
+            // Ensure default roles exist
+            var defaultRoles = new[] { "Admin", "User" };
+            foreach (var roleName in defaultRoles)
+            {
+                if (!await _roleManager.RoleExistsAsync(roleName))
+                {
+                    var roleResult = await _roleManager.CreateAsync(new IdentityRole(roleName));
+                    if (!roleResult.Succeeded)
+                    {
+                        _logger.LogError("Failed to create role {RoleName}: {Errors}", roleName, string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+                        throw new InvalidOperationException("Failed to create roles during seeding");
+                    }
+                }
+            }
 
             // Create a default user for comments
             var defaultUser = await _userManager.FindByEmailAsync("seeduser@example.com");
@@ -67,6 +85,16 @@ public sealed class DataSeeder
             else
             {
                 _logger.LogInformation("Default seed user already exists");
+            }
+
+            if (!await _userManager.IsInRoleAsync(defaultUser, "User"))
+            {
+                var addRoleResult = await _userManager.AddToRoleAsync(defaultUser, "User");
+                if (!addRoleResult.Succeeded)
+                {
+                    _logger.LogError("Failed to assign User role to default seed user: {Errors}", string.Join(", ", addRoleResult.Errors.Select(e => e.Description)));
+                    throw new InvalidOperationException("Failed to assign role to seed user");
+                }
             }
 
             var stocks = new List<Stock>
