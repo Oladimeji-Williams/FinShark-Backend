@@ -50,13 +50,21 @@ public static class CommentEntityConfiguration
                 .IsRequired()
                 .HasComment("Rating from 1 to 5");
 
-            // Audit Columns
-            entity.Property(e => e.Created)
+            // Audit shadow columns
+            entity.Property<DateTime>("Created")
                 .HasDefaultValueSql("GETUTCDATE()")
                 .HasComment("Record creation timestamp");
 
-            entity.Property(e => e.Modified)
+            entity.Property<DateTime?>("Modified")
                 .HasComment("Record last update timestamp");
+
+            entity.Property<string>("CreatedBy")
+                .HasMaxLength(450)
+                .HasComment("Record creator user id");
+
+            entity.Property<string>("ModifiedBy")
+                .HasMaxLength(450)
+                .HasComment("Record modifier user id");
 
             // Foreign Key Relationship
             entity.HasOne(c => c.Stock)
@@ -78,7 +86,7 @@ public static class CommentEntityConfiguration
             entity.HasIndex(e => e.UserId)
                 .HasDatabaseName("IX_Comment_UserId");
 
-            entity.HasIndex(e => e.Created)
+            entity.HasIndex("Created")
                 .HasDatabaseName("IX_Comment_Created");
 
             // Check constraints

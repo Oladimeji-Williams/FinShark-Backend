@@ -4,14 +4,15 @@ using FinShark.Domain.ValueObjects;
 
 public class Stock : BaseEntity
 {
-    public string Symbol { get; private set; }
-    public string CompanyName { get; private set; }
+    public string Symbol { get; private set; } = null!;
+    public string CompanyName { get; private set; } = null!;
     public decimal CurrentPrice { get; private set; }
     public decimal Purchase { get; private set; }
     public decimal LastDiv { get; private set; }
     public IndustryType Industry { get; set; } = IndustryType.Other;
     public decimal MarketCap { get; set; }
     public List<Comment> Comments { get; set; } = new List<Comment>();
+    public ICollection<PortfolioItem> PortfolioItems { get; set; } = new List<PortfolioItem>();
 
     private Stock() { } // EF Core needs parameterless constructor
 
@@ -26,7 +27,6 @@ public class Stock : BaseEntity
         CurrentPrice = currentPrice;
         Purchase = purchase;
         LastDiv = lastDiv;
-        Created = DateTime.UtcNow;
     }
 
     public void Update(string? symbol = null, string? companyName = null, decimal? currentPrice = null, 
@@ -37,6 +37,5 @@ public class Stock : BaseEntity
         if (currentPrice.HasValue && currentPrice.Value > 0) CurrentPrice = currentPrice.Value;
         if (industry.HasValue) Industry = industry.Value;
         if (marketCap.HasValue && marketCap.Value >= 0) MarketCap = marketCap.Value;
-        Modified = DateTime.UtcNow;
     }
 }

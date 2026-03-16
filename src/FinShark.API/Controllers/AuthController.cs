@@ -1,11 +1,15 @@
+using FinShark.Application.Auth.Commands.ConfirmEmail;
 using FinShark.Application.Auth.Commands.Login;
 using FinShark.Application.Auth.Commands.Register;
+using FinShark.Application.Auth.Commands.ResendEmailConfirmation;
+using FinShark.Application.Auth.Commands.TestSmtp;
 using FinShark.Application.Auth.Commands.UpdateProfile;
 using FinShark.Application.Auth.Services;
 using FinShark.Application.Dtos;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using FinShark.API.Extensions;
 using System.Security.Claims;
 
 namespace FinShark.API.Controllers;
@@ -86,7 +90,7 @@ public sealed class AuthController(IMediator mediator, IAuthService authService)
         [FromBody] ResendEmailConfirmationRequestDto request,
         CancellationToken cancellationToken)
     {
-        var result = await authService.ResendEmailConfirmationAsync(request.Email);
+        var result = await mediator.Send(new ResendEmailConfirmationCommand(request.Email), cancellationToken);
         if (!result.Success)
         {
             return BadRequest(ApiResponse<AuthResponseDto>.FailureResponse(result.Message ?? "Failed to send confirmation token", result.Errors ?? Array.Empty<string>()));
@@ -106,7 +110,7 @@ public sealed class AuthController(IMediator mediator, IAuthService authService)
         [FromQuery] string token,
         CancellationToken cancellationToken)
     {
-        var result = await authService.ConfirmEmailAsync(userId, token);
+        var result = await mediator.Send(new ConfirmEmailCommand(userId, token), cancellationToken);
         if (!result.Success)
         {
             return BadRequest(ApiResponse<AuthResponseDto>.FailureResponse(result.Message ?? "Email confirmation failed", result.Errors ?? Array.Empty<string>()));
@@ -127,7 +131,7 @@ public sealed class AuthController(IMediator mediator, IAuthService authService)
     [ProducesResponseType(typeof(ApiResponse<UserDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<UserDto>>> GetProfile(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = User.GetUserId();
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(ApiResponse<UserDto>.FailureResponse("User not authenticated"));
@@ -142,6 +146,34 @@ public sealed class AuthController(IMediator mediator, IAuthService authService)
         {
             return NotFound(ApiResponse<UserDto>.FailureResponse("User not found"));
         }
+    }
+
+    /// <summary>
+    /// Get authenticated user claims for id and username
+    /// </summary>
+    [HttpGet("me")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    public ActionResult<ApiResponse<object>> GetMe()
+    {
+        var userId = User.GetUserId();
+        var userName = User.GetUserName();
+        var firstName = User.GetFirstName();
+        var lastName = User.GetLastName();
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(ApiResponse<object>.FailureResponse("User not authenticated"));
+        }
+
+        return Ok(ApiResponse<object>.SuccessResponse(new
+        {
+            UserId = userId,
+            UserName = userName,
+            FirstName = firstName,
+            LastName = lastName
+        }, "User identity retrieved successfully"));
     }
 
     /// <summary>
@@ -194,7 +226,7 @@ public sealed class AuthController(IMediator mediator, IAuthService authService)
         [FromBody] UpdateProfileRequestDto request,
         CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = User.GetUserId();
         if (string.IsNullOrEmpty(userId))
         {
             return Unauthorized(ApiResponse<AuthResponseDto>.FailureResponse("User not authenticated"));
@@ -214,32 +246,21 @@ public sealed class AuthController(IMediator mediator, IAuthService authService)
     }
 
     /// <summary>
-    /// Change the current user's password
+    /// Test SMTP connectivity (dev only)
     /// </summary>
-    [HttpPost("profile/change-password")]
-    [Authorize]
-    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> ChangePassword(
-        [FromBody] ChangePasswordRequestDto request,
-        CancellationToken cancellationToken)
+    [HttpGet("smtp-test")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<string>>> TestSmtp(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
+        try
         {
-            return Unauthorized(ApiResponse<AuthResponseDto>.FailureResponse("User not authenticated"));
+            var result = await mediator.Send(new TestSmtpCommand(), cancellationToken);
+            return Ok(ApiResponse<string>.SuccessResponse(result, "SMTP test sent successfully"));
         }
-
-        var result = await authService.ChangePasswordAsync(userId, request);
-
-        if (!result.Success)
+        catch (Exception ex)
         {
-            return BadRequest(ApiResponse<AuthResponseDto>.FailureResponse(
-                result.Message ?? "Password change failed",
-                result.Errors ?? Array.Empty<string>()));
+            return BadRequest(ApiResponse<string>.FailureResponse($"SMTP test failed: {ex.Message}"));
         }
-
-        return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(result, "Password changed successfully"));
     }
 }

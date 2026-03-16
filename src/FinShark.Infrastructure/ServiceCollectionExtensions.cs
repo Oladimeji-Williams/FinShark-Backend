@@ -1,3 +1,6 @@
+using FinShark.Domain.Interfaces;
+using FinShark.Infrastructure.Email;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FinShark.Infrastructure;
@@ -12,10 +15,54 @@ public static class ServiceCollectionExtensions
     /// Adds infrastructure services to the dependency injection container
     /// </summary>
     public static IServiceCollection AddInfrastructureServices(
-        this IServiceCollection services)
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        // Add infrastructure services here
-        // These are external service integrations (email, SMS, file storage, etc.)
+        var smtpSection = configuration.GetSection("Smtp");
+
+        var smtpSettings = new SmtpSettings
+        {
+            Provider = smtpSection["Provider"],
+            Host = smtpSection["Host"],
+            Port = int.TryParse(smtpSection["Port"], out var port) ? port : 587,
+            EnableSsl = bool.TryParse(smtpSection["EnableSsl"], out var enableSsl) ? enableSsl : true,
+            UseDefaultCredentials = bool.TryParse(smtpSection["UseDefaultCredentials"], out var useDefaultCredentials) ? useDefaultCredentials : false,
+            UserName = smtpSection["UserName"],
+            Password = smtpSection["Password"],
+            FromEmail = smtpSection["FromEmail"],
+            FromName = smtpSection["FromName"],
+            TimeoutInMilliseconds = int.TryParse(smtpSection["TimeoutInMilliseconds"], out var timeout) ? timeout : 15000
+        };
+
+        // Apply provider defaults if host/port is not explicitly set
+        if (string.IsNullOrWhiteSpace(smtpSettings.Host))
+        {
+            var provider = smtpSettings.Provider?.Trim().ToLowerInvariant();
+            if (provider == "gmail")
+            {
+                smtpSettings.Host = "smtp.gmail.com";
+                smtpSettings.Port = 587;
+                smtpSettings.EnableSsl = true;
+            }
+            else
+            {
+                // default to Mailtrap as dev fallback
+                smtpSettings.Host = "smtp.mailtrap.io";
+                smtpSettings.Port = 2525;
+                smtpSettings.EnableSsl = true;
+            }
+        }
+
+        services.AddSingleton(smtpSettings);
+
+        if (!string.IsNullOrWhiteSpace(smtpSettings.Host) && !string.IsNullOrWhiteSpace(smtpSettings.FromEmail))
+        {
+            services.AddScoped<IEmailService, SmtpEmailService>();
+        }
+        else
+        {
+            services.AddScoped<IEmailService, NoOpEmailService>();
+        }
 
         return services;
     }

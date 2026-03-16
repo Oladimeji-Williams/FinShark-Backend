@@ -47,6 +47,55 @@ public static class PipelineConfiguration
             logger.LogInformation("Application environment: {Environment}", environment.EnvironmentName);
         }
 
+        // Health endpoint with SMTP config warning state
+        app.MapGet("/api/health", (IConfiguration config) =>
+        {
+            var warnings = new List<string>();
+            var smtpSection = config.GetSection("Smtp");
+            var provider = smtpSection["Provider"];
+            var host = smtpSection["Host"];
+            var fromEmail = smtpSection["FromEmail"];
+            var useDefaultCredentials = bool.TryParse(smtpSection["UseDefaultCredentials"], out var useDefault) ? useDefault : false;
+            var userName = smtpSection["UserName"];
+            var password = smtpSection["Password"];
+
+            if (string.IsNullOrWhiteSpace(host))
+            {
+                warnings.Add("SMTP host is not configured. Email delivery is unavailable.");
+            }
+
+            if (string.IsNullOrWhiteSpace(fromEmail))
+            {
+                warnings.Add("SMTP FromEmail is not configured. Email 'From' address is required.");
+            }
+
+            if (!useDefaultCredentials)
+            {
+                if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password))
+                {
+                    warnings.Add("SMTP credentials are missing. Set Smtp:UserName and Smtp:Password or enable UseDefaultCredentials.");
+                }
+            }
+
+            var smtpConfigured = warnings.Count == 0;
+            var healthData = new
+            {
+                status = smtpConfigured ? "Healthy" : "Degraded",
+                smtp = new
+                {
+                    provider,
+                    configured = smtpConfigured,
+                    host,
+                    fromEmail,
+                    useDefaultCredentials,
+                    warnings
+                }
+            };
+
+            var message = smtpConfigured ? "API is healthy" : "API is healthy with warnings";
+            return Results.Ok(FinShark.Application.Dtos.ApiResponse<object>.SuccessResponse(healthData, message));
+        });
+
         // Map Controllers
         app.MapControllers();
 

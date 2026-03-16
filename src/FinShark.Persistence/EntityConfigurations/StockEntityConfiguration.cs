@@ -50,13 +50,21 @@ public static class StockEntityConfiguration
                 .HasPrecision(18, 2)
                 .HasComment("Market capitalization");
 
-            // Audit Columns
-            entity.Property(e => e.Created)
+            // Audit shadow columns
+            entity.Property<DateTime>("Created")
                 .HasDefaultValueSql("GETUTCDATE()")
                 .HasComment("Record creation timestamp");
 
-            entity.Property(e => e.Modified)
+            entity.Property<DateTime?>("Modified")
                 .HasComment("Record last update timestamp");
+
+            entity.Property<string>("CreatedBy")
+                .HasMaxLength(450)
+                .HasComment("Record creator user id");
+
+            entity.Property<string>("ModifiedBy")
+                .HasMaxLength(450)
+                .HasComment("Record modifier user id");
 
             // Indexes for performance
             entity.HasIndex(e => e.Symbol)

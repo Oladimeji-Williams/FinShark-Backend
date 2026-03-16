@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FinShark.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260313200744_Initt")]
-    partial class Initt
+    [Migration("20260316193254_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -123,9 +123,19 @@ namespace FinShark.Persistence.Migrations
                         .HasDefaultValueSql("GETUTCDATE()")
                         .HasComment("Record creation timestamp");
 
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("Record creator user id");
+
                     b.Property<DateTime?>("Modified")
                         .HasColumnType("datetime2")
                         .HasComment("Record last update timestamp");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("Record modifier user id");
 
                     b.Property<int>("Rating")
                         .HasColumnType("int")
@@ -163,6 +173,55 @@ namespace FinShark.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FinShark.Domain.Entities.PortfolioItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Created")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()")
+                        .HasComment("When this stock was added to user portfolio");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("User who added this portfolio item");
+
+                    b.Property<DateTime?>("Modified")
+                        .HasColumnType("datetime2")
+                        .HasComment("When this stock portfolio item was modified");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("User who modified this portfolio item");
+
+                    b.Property<int>("StockId")
+                        .HasColumnType("int")
+                        .HasComment("Reference to Stock entity");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("Reference to ApplicationUser");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StockId");
+
+                    b.HasIndex("UserId", "StockId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PortfolioItem_UserId_StockId");
+
+                    b.ToTable("PortfolioItems");
+                });
+
             modelBuilder.Entity("FinShark.Domain.Entities.Stock", b =>
                 {
                     b.Property<int>("Id")
@@ -182,6 +241,11 @@ namespace FinShark.Persistence.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()")
                         .HasComment("Record creation timestamp");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("Record creator user id");
 
                     b.Property<decimal>("CurrentPrice")
                         .HasPrecision(18, 2)
@@ -205,6 +269,11 @@ namespace FinShark.Persistence.Migrations
                     b.Property<DateTime?>("Modified")
                         .HasColumnType("datetime2")
                         .HasComment("Record last update timestamp");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
+                        .HasComment("Record modifier user id");
 
                     b.Property<decimal>("Purchase")
                         .HasColumnType("decimal(18,2)");
@@ -378,6 +447,25 @@ namespace FinShark.Persistence.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("FinShark.Domain.Entities.PortfolioItem", b =>
+                {
+                    b.HasOne("FinShark.Domain.Entities.Stock", "Stock")
+                        .WithMany("PortfolioItems")
+                        .HasForeignKey("StockId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FinShark.Domain.Entities.ApplicationUser", "User")
+                        .WithMany("Portfolio")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Stock");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -432,11 +520,15 @@ namespace FinShark.Persistence.Migrations
             modelBuilder.Entity("FinShark.Domain.Entities.ApplicationUser", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("Portfolio");
                 });
 
             modelBuilder.Entity("FinShark.Domain.Entities.Stock", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("PortfolioItems");
                 });
 #pragma warning restore 612, 618
         }

@@ -25,8 +25,6 @@ public sealed record GetStockResponseDto
     public IndustryType Industry { get; init; } = IndustryType.Other;
     public decimal MarketCap { get; init; }
     public IReadOnlyList<GetCommentResponseDto> Comments { get; init; } = Array.Empty<GetCommentResponseDto>();
-    public required DateTime Created { get; init; }
-    public DateTime? Modified { get; init; }
 }
 
 /// <summary>

@@ -16,6 +16,13 @@ FinShark is a comprehensive backend API for stock management and financial data 
 
 ## 🏗️ Architecture Layers
 
+### Repository Interface Guideline
+
+We follow single repository interface per bounded context:
+- `IStockRepository` for stock domain operations
+- `ICommentRepository` for comments domain operations
+- `IPortfolioRepository` for portfolio domain operations
+
 ### Domain Layer (`FinShark.Domain`)
 
 Contains pure business logic with no external dependencies:

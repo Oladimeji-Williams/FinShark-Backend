@@ -6,6 +6,7 @@ using FinShark.Application.Stocks.Queries.GetStockById;
 using FinShark.Application.Stocks.Queries.GetStocks;
 using FinShark.Domain.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinShark.API.Controllers;

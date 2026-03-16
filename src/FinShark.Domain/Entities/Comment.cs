@@ -7,8 +7,8 @@ using FinShark.Domain.ValueObjects;
 /// </summary>
 public sealed class Comment : BaseEntity
 {
-    public string UserId { get; set; } = null!;
-    public int StockId { get; set; }
+    public string UserId { get; init; } = null!;
+    public int StockId { get; init; }
     public string Title { get; set; } = null!;
     public string Content { get; set; } = null!;
     public Rating Rating { get; private set; }
@@ -35,7 +35,6 @@ public sealed class Comment : BaseEntity
         Title = title;
         Content = content;
         Rating = rating;
-        Created = DateTime.UtcNow;
     }
 
     /// <summary>
@@ -53,7 +52,5 @@ public sealed class Comment : BaseEntity
                 throw new ArgumentException("Rating must be between 1 and 5", nameof(rating));
             Rating = rating.Value;
         }
-        
-        Modified = DateTime.UtcNow;
     }
 }

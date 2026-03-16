@@ -1,9 +1,12 @@
 using FinShark.Application.Auth.Services;
+using FinShark.Application.Common;
 using FinShark.Application.Dtos;
 using FinShark.Application.Mappers;
 using FinShark.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -19,6 +22,9 @@ public sealed class AuthService(
     UserManager<ApplicationUser> userManager,
     RoleManager<IdentityRole> roleManager,
     IConfiguration configuration,
+    IHostEnvironment hostEnvironment,
+    IAppUrlProvider appUrlProvider,
+    FinShark.Domain.Interfaces.IEmailService emailService,
     ILogger<AuthService> logger) : IAuthService
 {
     public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
@@ -32,8 +38,13 @@ public sealed class AuthService(
                 return new AuthResponseDto(false, null, "User with this email already exists");
             }
 
-            // Determine username (default to email if not provided)
-            var userName = string.IsNullOrWhiteSpace(request.UserName) ? request.Email : request.UserName;
+            // Validate username is provided
+            if (string.IsNullOrWhiteSpace(request.UserName))
+            {
+                return new AuthResponseDto(false, null, "Username is required");
+            }
+
+            var userName = request.UserName.Trim();
 
             // Check if username is already taken
             var existingUserByName = await userManager.FindByNameAsync(userName);
@@ -86,8 +97,21 @@ public sealed class AuthService(
 
             var userRoles = await userManager.GetRolesAsync(user);
             var token = GenerateJwtToken(user, userRoles);
+
+            // Send confirmation emails asynchronously; do not block registration on email provider availability.
+            var (confirmLink, emailSent) = await CreateAndSendEmailConfirmationLinkAsync(user);
+
             logger.LogInformation("User registered successfully: {Email}", request.Email);
-            return new AuthResponseDto(true, token, "Registration successful", null, UserMapper.ToDto(user, userRoles));
+            var response = new AuthResponseDto(
+                true,
+                token,
+                "Registration successful. Please confirm your email.",
+                null,
+                UserMapper.ToDto(user, userRoles),
+                hostEnvironment.IsDevelopment() ? confirmLink : null,
+                emailSent
+            );
+            return response;
         }
         catch (Exception ex)
         {
@@ -270,9 +294,16 @@ public sealed class AuthService(
             return new AuthResponseDto(false, null, "Email already confirmed");
         }
 
-        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
-        var roles = await userManager.GetRolesAsync(user);
-        return new AuthResponseDto(true, token, "Email confirmation token generated", null, UserMapper.ToDto(user, roles));
+        try
+        {
+            var (confirmLink, emailSent) = await CreateAndSendEmailConfirmationLinkAsync(user);
+            return new AuthResponseDto(true, null, "Email confirmation link sent", null, UserMapper.ToDto(user, await userManager.GetRolesAsync(user)), hostEnvironment.IsDevelopment() ? confirmLink : null, emailSent);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to send confirmation email for {Email}", email);
+            return new AuthResponseDto(true, null, "User exists; confirmation email could not be sent, but account is created.", null, UserMapper.ToDto(user, await userManager.GetRolesAsync(user)), null, false);
+        }
     }
 
     public async Task<AuthResponseDto> ConfirmEmailAsync(string userId, string token)
@@ -283,7 +314,17 @@ public sealed class AuthService(
             return new AuthResponseDto(false, null, "User not found");
         }
 
-        var result = await userManager.ConfirmEmailAsync(user, token);
+        string decodedToken;
+        try
+        {
+            decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+        }
+        catch
+        {
+            return new AuthResponseDto(false, null, "Invalid token");
+        }
+
+        var result = await userManager.ConfirmEmailAsync(user, decodedToken);
         if (!result.Succeeded)
         {
             var errors = result.Errors.Select(e => e.Description);
@@ -292,6 +333,35 @@ public sealed class AuthService(
 
         var roles = await userManager.GetRolesAsync(user);
         return new AuthResponseDto(true, null, "Email confirmed successfully", null, UserMapper.ToDto(user, roles));
+    }
+
+    private async Task<string> GetEmailConfirmationLinkAsync(ApplicationUser user, string? token = null)
+    {
+        token ??= await userManager.GenerateEmailConfirmationTokenAsync(user);
+        var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+        var clientUrl = appUrlProvider.GetClientUrl();
+
+        return $"{clientUrl.TrimEnd('/')}/api/auth/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(encodedToken)}";
+    }
+
+    private async Task<(string ConfirmLink, bool EmailSent)> CreateAndSendEmailConfirmationLinkAsync(ApplicationUser user)
+    {
+        var confirmLink = await GetEmailConfirmationLinkAsync(user);
+        var htmlBody = $"<p>Hi {user.UserName},</p><p>Please confirm your email by clicking <a href='{confirmLink}'>this link</a>.</p><p>If you did not sign up, ignore this email.</p>";
+        logger.LogInformation("[DEV] Email confirmation link for {Email}: {ConfirmLink}", user.Email, confirmLink);
+
+        try
+        {
+            await emailService.SendEmailAsync(user.Email!, "Confirm your FinShark email", htmlBody);
+            return (confirmLink, true);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Email confirmation send failed for {Email}, registration will continue without sending email", user.Email);
+            // Do not throw to avoid blocking registration due to email provider failures.
+            return (confirmLink, false);
+        }
     }
 
     public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
@@ -354,7 +424,9 @@ public sealed class AuthService(
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Name, user.UserName!),
-            new Claim(ClaimTypes.Email, user.Email!)
+            new Claim(ClaimTypes.Email, user.Email!),
+            new Claim(ClaimTypes.GivenName, user.FirstName ?? ""),
+            new Claim(ClaimTypes.Surname, user.LastName ?? "")
         };
 
         foreach (var role in roles)

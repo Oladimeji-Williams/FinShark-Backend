@@ -29,7 +29,7 @@ public sealed class ApplicationUser : IdentityUser
     /// <summary>
     /// When the user account was created
     /// </summary>
-    public DateTime Created { get; set; } = DateTime.UtcNow;
+    public DateTime Created { get; init; } = DateTime.UtcNow;
 
     /// <summary>
     /// When the user account was last modified
@@ -40,4 +40,9 @@ public sealed class ApplicationUser : IdentityUser
     /// Navigation property for comments made by this user
     /// </summary>
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+
+    /// <summary>
+    /// Navigation property for the user's stock portfolio
+    /// </summary>
+    public ICollection<PortfolioItem> Portfolio { get; set; } = new List<PortfolioItem>();
 }

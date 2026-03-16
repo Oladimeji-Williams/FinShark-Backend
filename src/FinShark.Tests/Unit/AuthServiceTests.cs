@@ -28,10 +28,23 @@ public class AuthServiceTests
 
         var loggerMock = new Mock<ILogger<AuthService>>();
 
+        var emailServiceMock = new Mock<FinShark.Domain.Interfaces.IEmailService>();
+        emailServiceMock.Setup(m => m.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
+
+        var hostEnvironmentMock = new Mock<Microsoft.Extensions.Hosting.IHostEnvironment>();
+        hostEnvironmentMock.SetupGet(e => e.EnvironmentName).Returns(Microsoft.Extensions.Hosting.Environments.Development);
+
+        var appUrlProviderMock = new Mock<FinShark.Application.Common.IAppUrlProvider>();
+        appUrlProviderMock.Setup(p => p.GetClientUrl()).Returns("https://localhost:5001");
+
         return new AuthService(
             userManagerMock.Object,
             roleManagerMock.Object,
             configuration,
+            hostEnvironmentMock.Object,
+            appUrlProviderMock.Object,
+            emailServiceMock.Object,
             loggerMock.Object);
     }
 

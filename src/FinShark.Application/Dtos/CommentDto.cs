@@ -35,7 +35,7 @@ public sealed record GetCommentResponseDto
     /// <summary>
     /// Timestamp when comment was created
     /// </summary>
-    public required DateTime Created { get; init; }
+    public DateTime? Created { get; init; }
 
     /// <summary>
     /// Timestamp when comment was last modified

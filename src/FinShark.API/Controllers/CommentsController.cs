@@ -1,14 +1,14 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+﻿using FinShark.API.Extensions;
 using FinShark.Application.Comments.Commands.CreateComment;
-using FinShark.Application.Comments.Commands.UpdateComment;
 using FinShark.Application.Comments.Commands.DeleteComment;
+using FinShark.Application.Comments.Commands.UpdateComment;
+using FinShark.Application.Comments.Queries.GetAllComments;
 using FinShark.Application.Comments.Queries.GetCommentById;
 using FinShark.Application.Comments.Queries.GetCommentsByStockId;
-using FinShark.Application.Comments.Queries.GetAllComments;
 using FinShark.Application.Dtos;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FinShark.API.Controllers;
 
@@ -116,8 +116,8 @@ public sealed class CommentsController : ControllerBase
     {
         _logger.LogInformation("POST /api/stocks/{StockId}/comments - Creating comment", stockId);
 
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
+        var userId = User.GetUserId();
+        if (string.IsNullOrWhiteSpace(userId))
         {
             _logger.LogWarning("POST /api/stocks/{StockId}/comments - User ID not found in token", stockId);
             return Unauthorized(ApiResponse<int>.FailureResponse("User not authenticated"));
