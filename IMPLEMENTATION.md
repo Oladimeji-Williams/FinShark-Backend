@@ -14,6 +14,15 @@ Complete guide for implementing new features following CQRS, clean architecture,
 
 ---
 
+## Repository Interface Guideline
+
+For each aggregate, use a single repository interface in the domain layer (no mixed multiple repositories per aggregate):
+- `IStockRepository` for stock operations
+- `ICommentRepository` for comment operations
+- `IPortfolioRepository` for portfolio operations
+
+Then implement that interface in persistence layer.
+
 ## Adding a New Feature
 
 ### Example: Stock Dividend Management
@@ -746,6 +755,13 @@ public class CreateStockCommandHandlerTests
 ---
 
 ## Common Patterns
+
+### Shadow-only audit pattern (current architecture)
+
+- Use `BaseEntity` as pure domain identity (`Id` only).
+- Define audit columns as EF shadow properties in `AppDbContext` / entity configuration (`Created`, `Modified`, `CreatedBy`, `ModifiedBy`).
+- Keep audit writes in `AuditSaveChangesInterceptor` using `entry.Property("...").CurrentValue`.
+- Include audit fields in DTO only when API consumers need them; otherwise keep read models lean.
 
 ### Exception Handling
 

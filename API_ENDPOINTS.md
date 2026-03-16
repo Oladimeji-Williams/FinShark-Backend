@@ -16,6 +16,89 @@ Production: https://your-domain.com/api
 
 ---
 
+## Authentication Endpoints
+
+### Register User
+
+Creates a new user and sends confirmation email link.
+
+**Endpoint**: `POST /api/auth/register`
+
+**Request Headers**:
+```
+Content-Type: application/json
+```
+
+**Request Body** (required fields):
+```json
+{
+  "userName": "trader123",
+  "email": "trader@example.com",
+  "password": "P@ssw0rd!"
+}
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "<guid>",
+      "userName": "trader123",
+      "email": "trader@example.com",
+      "emailConfirmed": false
+    },
+    "token": null,
+    "expiresAt": null
+  },
+  "message": "Registration successful. Check your email to confirm your account.",
+  "errors": null
+}
+```
+
+---
+
+### Login User
+
+Logs in an existing user by email and password (email must be confirmed).
+
+**Endpoint**: `POST /api/auth/login`
+
+**Request Headers**:
+```
+Content-Type: application/json
+```
+
+**Request Body** (required fields):
+```json
+{
+  "email": "trader@example.com",
+  "password": "P@ssw0rd!"
+}
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": {
+    "token": "<jwt-token>",
+    "expiresAt": "2026-03-14T15:30:00Z",
+    "user": {
+      "id": "<guid>",
+      "userName": "trader123",
+      "email": "trader@example.com",
+      "emailConfirmed": true
+    }
+  },
+  "message": "Login successful",
+  "errors": null
+}
+```
+
+---
+
 ## Stock Endpoints
 
 ### 1. Create Stock

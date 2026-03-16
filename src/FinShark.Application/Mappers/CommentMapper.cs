@@ -1,6 +1,7 @@
 using FinShark.Application.Dtos;
 using FinShark.Application.Comments.Commands.UpdateComment;
 using FinShark.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinShark.Application.Mappers;
 
@@ -23,8 +24,8 @@ public sealed class CommentMapper
             Title = comment.Title,
             Content = comment.Content,
             Rating = comment.Rating,
-            Created = comment.Created,
-            Modified = comment.Modified
+            Created = default,
+            Modified = default
         };
     }
 

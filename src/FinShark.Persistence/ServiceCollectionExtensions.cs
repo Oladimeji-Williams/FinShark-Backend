@@ -1,6 +1,8 @@
 using FinShark.Application.Auth.Services;
+using FinShark.Application.Common;
 using FinShark.Domain.Entities;
 using FinShark.Domain.Repositories;
+using FinShark.Persistence.Common;
 using FinShark.Persistence.Repositories;
 using FinShark.Persistence.Seeding;
 using FinShark.Persistence.Services;
@@ -29,11 +31,15 @@ public static class ServiceCollectionExtensions
         var useInMemoryDb = bool.TryParse(Environment.GetEnvironmentVariable("FINSHARK_USE_INMEMORY_DB"), out var inMemoryFlag) && inMemoryFlag
             || bool.TryParse(configuration["UseInMemoryDatabase"], out var configInMemory) && configInMemory;
 
+        // Register interceptor for audit shadow properties.
+        services.AddScoped<Audit.AuditSaveChangesInterceptor>();
+
         if (useInMemoryDb)
         {
-            services.AddDbContext<AppDbContext>(options =>
+            services.AddDbContext<AppDbContext>((serviceProvider, options) =>
             {
                 options.UseInMemoryDatabase("FinSharkInMemoryDb");
+                options.AddInterceptors(serviceProvider.GetRequiredService<Audit.AuditSaveChangesInterceptor>());
             });
         }
         else
@@ -45,7 +51,7 @@ public static class ServiceCollectionExtensions
                     "Connection string not found. Set FINSHARK_DB_CONNECTION environment variable or configure 'DefaultConnection' in appsettings.Development.json");
 
             // Register DbContext
-            services.AddDbContext<AppDbContext>(options =>
+            services.AddDbContext<AppDbContext>((serviceProvider, options) =>
             {
                 options.UseSqlServer(connectionString, sqlOptions =>
                 {
@@ -55,6 +61,7 @@ public static class ServiceCollectionExtensions
                         maxRetryDelay: TimeSpan.FromSeconds(30),
                         errorNumbersToAdd: null);
                 });
+                options.AddInterceptors(serviceProvider.GetRequiredService<Audit.AuditSaveChangesInterceptor>());
             });
         }
 
@@ -86,10 +93,12 @@ public static class ServiceCollectionExtensions
 
         // Register repositories
         services.AddScoped<IStockRepository, StockRepository>();
+        services.AddScoped<IPortfolioRepository, StockRepository>();
         services.AddScoped<ICommentRepository, CommentRepository>();
 
         // Register auth service
         services.AddScoped<IAuthService, AuthService>();
+        services.AddSingleton<IAppUrlProvider, AppUrlProvider>();
 
         // Register data seeder
         services.AddScoped<DataSeeder>();

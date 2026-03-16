@@ -40,7 +40,7 @@ public sealed class CommentRepository : ICommentRepository
 
         var query = _context.Comments
             .Where(c => c.StockId == stockId)
-            .OrderByDescending(c => c.Created);
+            .OrderByDescending(c => EF.Property<DateTime>(c, "Created"));
 
         if (pageNumber.HasValue || pageSize.HasValue)
         {
@@ -70,7 +70,7 @@ public sealed class CommentRepository : ICommentRepository
         _logger.LogInformation("Fetching all comments. Page: {PageNumber}, PageSize: {PageSize}", pageNumber, pageSize);
 
         var query = _context.Comments
-            .OrderByDescending(c => c.Created)
+            .OrderByDescending(c => EF.Property<DateTime>(c, "Created"))
             .AsQueryable();
 
         if (pageNumber.HasValue || pageSize.HasValue)

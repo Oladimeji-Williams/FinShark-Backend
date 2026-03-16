@@ -7,6 +7,7 @@ using DotNetEnv;
 using Serilog;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Serialization;
+using FinShark.Application.Dtos;
 using Microsoft.AspNetCore.Mvc;
 
 // ============================================
@@ -73,10 +74,14 @@ builder.Host.UseSerilog();
 
 // Business Logic Layer Services
 builder.Services.AddApplicationServices();
-builder.Services.AddInfrastructureServices();
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Data Access Layer Services
 builder.Services.AddPersistenceServices(builder.Configuration);
+
+// Current user context for audit and persistence
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<FinShark.Application.Common.ICurrentUserService, FinShark.API.Services.CurrentUserService>();
 
 // Authentication & Authorization
 builder.Services.AddAuthenticationConfiguration(builder.Configuration);

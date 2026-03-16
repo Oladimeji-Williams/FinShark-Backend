@@ -67,6 +67,12 @@ Visual and detailed explanation of the clean architecture and system design.
 
 ## Layered Architecture Details
 
+### Repository Interface Guideline
+
+- Use one repository interface per bounded context (aggregate) to keep domain contracts clear and aligned with DDD.
+- Example: `IStockRepository`, `ICommentRepository`, `IPortfolioRepository`.
+- Keep repository interfaces in `FinShark.Domain.Repositories` and implementations in `FinShark.Persistence.Repositories`.
+
 ### 1. **Presentation Layer (API)**
 
 **File**: `src/FinShark.API/`

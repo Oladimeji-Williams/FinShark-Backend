@@ -1,6 +1,7 @@
 using FinShark.Application.Dtos;
 using FinShark.Application.Stocks.Commands.CreateStock;
 using FinShark.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinShark.Application.Mappers;
 
@@ -25,9 +26,7 @@ public sealed class StockMapper
             CurrentPrice = stock.CurrentPrice,
             Industry = stock.Industry,
             MarketCap = stock.MarketCap,
-            Comments = CommentMapper.ToDtoList(stock.Comments).ToList(),
-            Created = stock.Created,
-            Modified = stock.Modified
+            Comments = CommentMapper.ToDtoList(stock.Comments).ToList()
         };
     }
 

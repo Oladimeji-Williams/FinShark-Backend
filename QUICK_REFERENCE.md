@@ -530,6 +530,13 @@ DELETE /api/comments/{id}         → Delete comment
 
 ## Architecture Quick Guide
 
+### Repository Interface Guideline
+
+- Use one repository interface per bounded context (aggregate) in domain layer.
+- Keep domain contract interfaces separate from persistence implementations.
+- E.g., `IStockRepository`, `ICommentRepository`, `IPortfolioRepository`.
+
+
 ### CQRS Pattern
 
 ```

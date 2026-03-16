@@ -44,7 +44,9 @@ public sealed record AuthResponseDto(
     string? Token = null,
     string? Message = null,
     IEnumerable<string>? Errors = null,
-    UserDto? User = null
+    UserDto? User = null,
+    string? EmailConfirmationUrl = null,
+    bool EmailSent = false
 );
 
 /// <summary>

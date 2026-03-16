@@ -1,6 +1,6 @@
 ﻿using FinShark.Domain.Entities;
-using FinShark.Domain.Repositories;
 using FinShark.Domain.Queries;
+using FinShark.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,7 +12,7 @@ namespace FinShark.Persistence.Repositories;
 /// </summary>
 public sealed class StockRepository(
     AppDbContext appDbContext,
-    ILogger<StockRepository> logger) : IStockRepository
+    ILogger<StockRepository> logger) : IStockRepository, IPortfolioRepository
 {
     private readonly AppDbContext _context = appDbContext ?? throw new ArgumentNullException(nameof(appDbContext));
     private readonly ILogger<StockRepository> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -175,7 +175,7 @@ public sealed class StockRepository(
             StockSortBy.CompanyName => descending ? query.OrderByDescending(s => s.CompanyName) : query.OrderBy(s => s.CompanyName),
             StockSortBy.CurrentPrice => descending ? query.OrderByDescending(s => s.CurrentPrice) : query.OrderBy(s => s.CurrentPrice),
             StockSortBy.MarketCap => descending ? query.OrderByDescending(s => s.MarketCap) : query.OrderBy(s => s.MarketCap),
-            StockSortBy.Created => descending ? query.OrderByDescending(s => s.Created) : query.OrderBy(s => s.Created),
+            StockSortBy.Created => descending ? query.OrderByDescending(s => EF.Property<DateTime>(s, "Created")) : query.OrderBy(s => EF.Property<DateTime>(s, "Created")),
             _ => descending ? query.OrderByDescending(s => s.Symbol) : query.OrderBy(s => s.Symbol)
         };
     }
@@ -243,6 +243,95 @@ public sealed class StockRepository(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving stock with symbol: {Symbol}", symbol);
+            throw;
+        }
+    }
+
+    public async Task<IEnumerable<Stock>> GetPortfolioAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("UserId cannot be empty", nameof(userId));
+
+        try
+        {
+            _logger.LogInformation("Fetching portfolio stocks for user: {UserId}", userId);
+
+            var portfolioStocks = await _context.PortfolioItems
+                .Where(p => p.UserId == userId)
+                .Include(p => p.Stock)
+                .ThenInclude(s => s.Comments)
+                .Select(p => p.Stock!)
+                .ToListAsync(cancellationToken);
+
+            _logger.LogInformation("Retrieved {Count} portfolio stocks for user: {UserId}", portfolioStocks.Count, userId);
+            return portfolioStocks;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving portfolio for user: {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<bool> AddStockToPortfolioAsync(string userId, int stockId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("UserId cannot be empty", nameof(userId));
+
+        try
+        {
+            _logger.LogInformation("Adding stock {StockId} to portfolio for user: {UserId}", stockId, userId);
+
+            if (await _context.PortfolioItems.AnyAsync(pi => pi.UserId == userId && pi.StockId == stockId, cancellationToken))
+            {
+                _logger.LogInformation("Stock {StockId} is already in portfolio for user: {UserId}", stockId, userId);
+                return false;
+            }
+
+            var stock = await _context.Stocks.FindAsync(new object[] { stockId }, cancellationToken);
+            if (stock is null)
+            {
+                _logger.LogWarning("Stock {StockId} does not exist", stockId);
+                return false;
+            }
+
+            await _context.PortfolioItems.AddAsync(new PortfolioItem { UserId = userId, StockId = stockId }, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Stock {StockId} added to portfolio for user: {UserId}", stockId, userId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding stock {StockId} to portfolio for user: {UserId}", stockId, userId);
+            throw;
+        }
+    }
+
+    public async Task<bool> RemoveStockFromPortfolioAsync(string userId, int stockId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("UserId cannot be empty", nameof(userId));
+
+        try
+        {
+            _logger.LogInformation("Removing stock {StockId} from portfolio for user: {UserId}", stockId, userId);
+
+            var portfolioItem = await _context.PortfolioItems
+                .SingleOrDefaultAsync(pi => pi.UserId == userId && pi.StockId == stockId, cancellationToken);
+
+            if (portfolioItem is null)
+            {
+                _logger.LogInformation("Stock {StockId} not found in portfolio for user: {UserId}", stockId, userId);
+                return false;
+            }
+
+            _context.PortfolioItems.Remove(portfolioItem);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Stock {StockId} removed from portfolio for user: {UserId}", stockId, userId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing stock {StockId} from portfolio for user: {UserId}", stockId, userId);
             throw;
         }
     }

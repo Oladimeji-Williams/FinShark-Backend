@@ -1,3 +1,4 @@
+using System.Linq;
 using FinShark.Domain.Entities;
 using FinShark.Persistence.EntityConfigurations;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -8,45 +9,46 @@ namespace FinShark.Persistence;
 /// <summary>
 /// Application DbContext for Entity Framework Core
 /// Manages database operations and orchestrates entity configurations
-/// Automatically handles audit timestamps (Created, Modified)
+/// Automatically handles audit timestamps through shadow properties
 /// </summary>
-public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<ApplicationUser>(options)
+public sealed class AppDbContext : IdentityDbContext<ApplicationUser>
 {
+    public AppDbContext(DbContextOptions<AppDbContext> options)
+        : base(options)
+    {
+    }
+
     public DbSet<Stock> Stocks { get; set; } = null!;
     public DbSet<Comment> Comments { get; set; } = null!;
+    public DbSet<PortfolioItem> PortfolioItems { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
+        // Configure audit shadow properties on all BaseEntity derived types
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+            .Where(t => typeof(BaseEntity).IsAssignableFrom(t.ClrType)))
+        {
+            if (entityType.FindProperty("CreatedBy") == null)
+            {
+                entityType.AddProperty("CreatedBy", typeof(string));
+            }
+            if (entityType.FindProperty("ModifiedBy") == null)
+            {
+                entityType.AddProperty("ModifiedBy", typeof(string));
+            }
+        }
+
         // Configure entities using dedicated configuration classes
         modelBuilder.ConfigureStock();
         modelBuilder.ConfigureComment();
+        modelBuilder.ConfigurePortfolioItem();
 
         // Ensure Email and UserName are unique
         modelBuilder.Entity<ApplicationUser>()
             .HasIndex(u => u.NormalizedEmail)
             .IsUnique()
             .HasDatabaseName("EmailIndex");
-    }
-
-    /// <summary>
-    /// Overrides SaveChangesAsync to automatically update the Modified timestamp
-    /// for any modified entities that inherit from BaseEntity
-    /// </summary>
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        // Update the Modified timestamp for all modified entities
-        var entries = ChangeTracker.Entries<BaseEntity>();
-        
-        foreach (var entry in entries)
-        {
-            if (entry.State == EntityState.Modified)
-            {
-                entry.Entity.Modified = DateTime.UtcNow;
-            }
-        }
-
-        return await base.SaveChangesAsync(cancellationToken);
     }
 }

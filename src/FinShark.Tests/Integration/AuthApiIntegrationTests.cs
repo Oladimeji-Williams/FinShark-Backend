@@ -1,12 +1,14 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using Microsoft.AspNetCore.WebUtilities;
 using FinShark.Domain.Entities;
 using FinShark.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace FinShark.Tests.Integration;
@@ -73,7 +75,7 @@ public sealed class AuthApiIntegrationTests : IClassFixture<CustomWebApplication
         }
 
         // Arrange - register the target user through API
-        var registerResponse = await _client.PostAsync("/api/auth/register", ToJsonContent(new { Email = userEmail, Password = userPassword }));
+        var registerResponse = await _client.PostAsync("/api/auth/register", ToJsonContent(new { UserName = "targetuser", Email = userEmail, Password = userPassword }));
         registerResponse.EnsureSuccessStatusCode();
 
         var registerResponseBody = await registerResponse.Content.ReadAsStringAsync();
@@ -132,7 +134,7 @@ public sealed class AuthApiIntegrationTests : IClassFixture<CustomWebApplication
         var password = "Password123!";
 
         // Register user
-        var registerResponse = await _client.PostAsync("/api/auth/register", ToJsonContent(new { Email = email, Password = password }));
+        var registerResponse = await _client.PostAsync("/api/auth/register", ToJsonContent(new { UserName = "confirmuser", Email = email, Password = password }));
         registerResponse.EnsureSuccessStatusCode();
         var registerBody = await registerResponse.Content.ReadAsStringAsync();
         dynamic registerJson = JsonConvert.DeserializeObject(registerBody)!;
@@ -142,12 +144,18 @@ public sealed class AuthApiIntegrationTests : IClassFixture<CustomWebApplication
         var loginResponse = await _client.PostAsync("/api/auth/login", ToJsonContent(new { Email = email, Password = password }));
         Assert.Equal(HttpStatusCode.Unauthorized, loginResponse.StatusCode);
 
-        // Resend confirmation and get token
+        // Resend confirmation link (no token returned by design)
         var resendResponse = await _client.PostAsync("/api/auth/resend-confirmation", ToJsonContent(new { Email = email }));
         resendResponse.EnsureSuccessStatusCode();
-        var resendBody = await resendResponse.Content.ReadAsStringAsync();
-        dynamic resendJson = JsonConvert.DeserializeObject(resendBody)!;
-        string token = resendJson.data.token;
+
+        // Use UserManager to generate the expected token for confirmation
+        string token;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+            var user = await userManager.FindByEmailAsync(email);
+            token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(await userManager.GenerateEmailConfirmationTokenAsync(user!)));
+        }
 
         // Confirm email
         var confirmResponse = await _client.GetAsync($"/api/auth/confirm-email?userId={userId}&token={Uri.EscapeDataString(token)}");
@@ -156,6 +164,88 @@ public sealed class AuthApiIntegrationTests : IClassFixture<CustomWebApplication
         // Login should now succeed
         var loginResponseAfter = await _client.PostAsync("/api/auth/login", ToJsonContent(new { Email = email, Password = password }));
         loginResponseAfter.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task PortfolioAddGetRemoveFlow_Works()
+    {
+        var email = "portfolio.user@example.com";
+        var password = "Portfolio123!";
+        var userName = "portfoliouser";
+
+        // Register user
+        var registerResponse = await _client.PostAsync("/api/auth/register", ToJsonContent(new { UserName = userName, Email = email, Password = password }));
+        registerResponse.EnsureSuccessStatusCode();
+
+        // Confirm user email directly through UserManager for test reliability.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+            var user = await userManager.FindByEmailAsync(email);
+            Assert.NotNull(user);
+            user!.EmailConfirmed = true;
+            var updateResult = await userManager.UpdateAsync(user);
+            Assert.True(updateResult.Succeeded, "Could not confirm test user email");
+        }
+
+        // Login to get bearer token
+        var loginResponse = await _client.PostAsync("/api/auth/login", ToJsonContent(new { Email = email, Password = password }));
+        loginResponse.EnsureSuccessStatusCode();
+        var loginBody = await loginResponse.Content.ReadAsStringAsync();
+        var loginJson = JObject.Parse(loginBody);
+        var token = loginJson["data"]!["token"]!.Value<string>();
+        Assert.False(string.IsNullOrWhiteSpace(token));
+
+        var authClient = _factory.CreateClient();
+        authClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Create a stock to add to portfolio
+        var createStockResponse = await authClient.PostAsync("/api/stocks", ToJsonContent(new
+        {
+            Symbol = "TST1",
+            CompanyName = "Test Stock 1",
+            CurrentPrice = 12.34m,
+            Industry = "Technology",
+            MarketCap = 5000000m
+        }));
+        createStockResponse.EnsureSuccessStatusCode();
+
+        var createStockBody = await createStockResponse.Content.ReadAsStringAsync();
+        var createStockJson = JObject.Parse(createStockBody);
+        var stockId = createStockJson["data"]!["id"]!.Value<int>();
+
+        // Add the stock to portfolio
+        var addResponse = await authClient.PostAsync($"/api/portfolio/{stockId}", null);
+        addResponse.EnsureSuccessStatusCode();
+        var addJson = JObject.Parse(await addResponse.Content.ReadAsStringAsync());
+        Assert.True(addJson["data"]!.Value<bool>());
+
+        // Get portfolio and verify the newly added stock is present
+        var getPortfolioResponse = await authClient.GetAsync("/api/portfolio");
+        getPortfolioResponse.EnsureSuccessStatusCode();
+        var portfolioJson = JObject.Parse(await getPortfolioResponse.Content.ReadAsStringAsync());
+        var portfolioData = (JArray)portfolioJson["data"]!;
+        Assert.Single(portfolioData);
+        Assert.Equal("TST1", portfolioData[0]["symbol"]!.Value<string>());
+
+        // Add same stock again should return false (already in portfolio)
+        var addDuplicateResponse = await authClient.PostAsync($"/api/portfolio/{stockId}", null);
+        addDuplicateResponse.EnsureSuccessStatusCode();
+        var addDuplicateJson = JObject.Parse(await addDuplicateResponse.Content.ReadAsStringAsync());
+        Assert.False(addDuplicateJson["data"]!.Value<bool>());
+
+        // Remove from portfolio
+        var removeResponse = await authClient.DeleteAsync($"/api/portfolio/{stockId}");
+        removeResponse.EnsureSuccessStatusCode();
+        var removeJson = JObject.Parse(await removeResponse.Content.ReadAsStringAsync());
+        Assert.True(removeJson["data"]!.Value<bool>());
+
+        // Ensure portfolio is now empty
+        var getPortfolioAfterRemoveResponse = await authClient.GetAsync("/api/portfolio");
+        getPortfolioAfterRemoveResponse.EnsureSuccessStatusCode();
+        var portfolioAfterJson = JObject.Parse(await getPortfolioAfterRemoveResponse.Content.ReadAsStringAsync());
+        var portfolioAfterData = (JArray)portfolioAfterJson["data"]!;
+        Assert.Empty(portfolioAfterData);
     }
 }
 
