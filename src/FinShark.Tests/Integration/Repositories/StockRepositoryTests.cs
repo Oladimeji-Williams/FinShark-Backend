@@ -151,7 +151,7 @@ public class StockRepositoryTests : IAsyncLifetime
         // Arrange
         var stock = new Stock("AAPL", "Apple Inc.", 150.50m) 
         { 
-            Industry = IndustryType.Technology 
+            Sector = SectorType.Technology 
         };
 
         // Act
@@ -161,7 +161,7 @@ public class StockRepositoryTests : IAsyncLifetime
         // Assert
         retrieved.Should().NotBeNull();
         retrieved!.Symbol.Should().Be("AAPL");
-        retrieved.Industry.Should().Be(IndustryType.Technology);
+        retrieved.Sector.Should().Be(SectorType.Technology);
     }
 
     #endregion

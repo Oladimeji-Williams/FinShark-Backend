@@ -1,4 +1,4 @@
-﻿using FinShark.Domain.Entities;
+using FinShark.Domain.Entities;
 using FinShark.Domain.Interfaces;
 using FinShark.Domain.Queries;
 

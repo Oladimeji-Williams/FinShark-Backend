@@ -10,7 +10,7 @@ public sealed class StockQueryParameters
 {
     public string? Symbol { get; init; }
     public string? CompanyName { get; init; }
-    public IndustryType? Industry { get; init; }
+    public SectorType? Sector { get; init; }
     public decimal? MinPrice { get; init; }
     public decimal? MaxPrice { get; init; }
     public decimal? MinMarketCap { get; init; }

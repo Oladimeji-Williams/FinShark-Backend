@@ -45,6 +45,11 @@ public sealed class AppDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.ConfigureComment();
         modelBuilder.ConfigurePortfolioItem();
 
+        // Soft delete filters for all entities with IsDeleted flag
+        modelBuilder.Entity<Stock>().HasQueryFilter(s => !s.IsDeleted);
+        modelBuilder.Entity<Comment>().HasQueryFilter(c => !c.IsDeleted);
+        modelBuilder.Entity<PortfolioItem>().HasQueryFilter(p => !p.IsDeleted);
+
         // Ensure Email and UserName are unique
         modelBuilder.Entity<ApplicationUser>()
             .HasIndex(u => u.NormalizedEmail)

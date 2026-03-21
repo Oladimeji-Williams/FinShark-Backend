@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using FinShark.Application.Stocks.Commands.CreateStock;
 using FinShark.Application.Stocks.Queries.GetStocks;
@@ -49,7 +49,7 @@ public class CreateStockCommandHandlerTests : IAsyncLifetime
             "AAPL",
             "Apple Inc.",
             150.50m,
-            IndustryType.Technology,
+            SectorType.Technology,
             2800000000000
         );
 
@@ -94,7 +94,7 @@ public class CreateStockCommandHandlerTests : IAsyncLifetime
             "GOOGL",
             "Google Inc.",
             140.00m,
-            IndustryType.Technology
+            SectorType.Technology
         );
 
         // Act
@@ -103,7 +103,7 @@ public class CreateStockCommandHandlerTests : IAsyncLifetime
         // Assert
         var created = await _repository.GetBySymbolAsync("GOOGL");
         created.Should().NotBeNull();
-        created!.Industry.Should().Be(IndustryType.Technology);
+        created!.Sector.Should().Be(SectorType.Technology);
     }
 
     #endregion
@@ -128,9 +128,9 @@ public class GetStocksQueryHandlerTests : IAsyncLifetime
 
         // Seed test data
         _context.Stocks.AddRange(
-            new Stock("AAPL", "Apple Inc.", 150.50m) { Industry = IndustryType.Technology },
-            new Stock("MSFT", "Microsoft Corp.", 380.00m) { Industry = IndustryType.Technology },
-            new Stock("JPM", "JP Morgan", 180.00m) { Industry = IndustryType.Finance }
+            new Stock("AAPL", "Apple Inc.", 150.50m) { Sector = SectorType.Technology },
+            new Stock("MSFT", "Microsoft Corp.", 380.00m) { Sector = SectorType.Technology },
+            new Stock("JPM", "JP Morgan", 180.00m) { Sector = SectorType.Finance }
         );
         await _context.SaveChangesAsync();
     }
@@ -173,20 +173,20 @@ public class GetStocksQueryHandlerTests : IAsyncLifetime
 
         // Assert
         dtoList[0].Symbol.Should().Be("AAPL");
-        dtoList[0].Industry.Should().Be(IndustryType.Technology);
+        dtoList[0].Sector.Should().Be(SectorType.Technology);
         dtoList[1].Symbol.Should().Be("JPM");
-        dtoList[1].Industry.Should().Be(IndustryType.Finance);
+        dtoList[1].Sector.Should().Be(SectorType.Finance);
         dtoList[2].Symbol.Should().Be("MSFT");
-        dtoList[2].Industry.Should().Be(IndustryType.Technology);
+        dtoList[2].Sector.Should().Be(SectorType.Technology);
     }
 
     [Fact]
-    public async Task Handle_WithIndustryFilter_ShouldReturnOnlyMatching()
+    public async Task Handle_WithSectorFilter_ShouldReturnOnlyMatching()
     {
         // Arrange
         var parameters = new StockQueryParameters
         {
-            Industry = IndustryType.Technology
+            Sector = SectorType.Technology
         };
         var query = new GetStocksQuery(parameters);
 
@@ -195,7 +195,7 @@ public class GetStocksQueryHandlerTests : IAsyncLifetime
 
         // Assert
         result.Items.Should().HaveCount(2);
-        result.Items.All(s => s.Industry == IndustryType.Technology).Should().BeTrue();
+        result.Items.All(s => s.Sector == SectorType.Technology).Should().BeTrue();
         result.Pagination.TotalCount.Should().Be(2);
     }
 

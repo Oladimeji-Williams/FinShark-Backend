@@ -43,16 +43,23 @@ Content-Type: application/json
 {
   "success": true,
   "data": {
+    "success": true,
+    "token": "<jwt-token>",
+    "message": "Registration successful. Please confirm your email.",
     "user": {
       "id": "<guid>",
       "userName": "trader123",
       "email": "trader@example.com",
-      "emailConfirmed": false
+      "roles": ["User"],
+      "firstName": null,
+      "lastName": null,
+      "fullName": null,
+      "modified": null
     },
-    "token": null,
-    "expiresAt": null
+    "emailConfirmationUrl": "https://localhost:5001/api/auth/confirm-email?userId=<guid>&token=<token>",
+    "emailSent": false
   },
-  "message": "Registration successful. Check your email to confirm your account.",
+  "message": "User registered successfully",
   "errors": null
 }
 ```
@@ -84,12 +91,15 @@ Content-Type: application/json
   "success": true,
   "data": {
     "token": "<jwt-token>",
-    "expiresAt": "2026-03-14T15:30:00Z",
     "user": {
       "id": "<guid>",
       "userName": "trader123",
       "email": "trader@example.com",
-      "emailConfirmed": true
+      "roles": ["User"],
+      "firstName": null,
+      "lastName": null,
+      "fullName": null,
+      "modified": null
     }
   },
   "message": "Login successful",
@@ -120,7 +130,7 @@ Content-Type: application/json
   "symbol": "AAPL",
   "companyName": "Apple Inc.",
   "currentPrice": 250.50,
-  "industry": "Technology",
+  "sector": "Technology",
   "marketCap": 2500000000000
 }
 ```
@@ -129,7 +139,9 @@ Content-Type: application/json
 ```json
 {
   "success": true,
-  "data": 1,
+  "data": {
+    "id": 1
+  },
   "message": "Stock created successfully",
   "errors": null
 }
@@ -142,11 +154,10 @@ Content-Type: application/json
   "data": null,
   "message": null,
   "errors": [
-    "Symbol is required",
-    "Company Name is required",
-    "Current Price must be greater than 0",
-    "Industry is required",
-    "Market Cap must be greater than 0"
+    "Stock symbol is required.",
+    "Company name is required.",
+    "Current price must be greater than zero.",
+    "Market cap must be greater than or equal to 0"
   ]
 }
 ```
@@ -169,7 +180,7 @@ curl -X POST "https://localhost:5001/api/stocks" \
     "symbol": "AAPL",
     "companyName": "Apple Inc.",
     "currentPrice": 250.50,
-    "industry": "Technology",
+    "sector": "Technology",
     "marketCap": 2500000000000
   }'
 ```
@@ -185,7 +196,7 @@ Retrieves all stocks with optional filtering, sorting, and pagination.
 **Query Parameters**:
 - `pageNumber` (int, optional): Page number (1-based)
 - `pageSize` (int, optional): Items per page (max: 100)
-- `industry` (string, optional): Filter by industry
+- `sector` (string, optional): Filter by sector
 - `symbol` (string, optional): Search by symbol (partial match)
 - `companyName` (string, optional): Search by company name (partial match)
 - `minPrice` (decimal, optional): Minimum current price
@@ -206,20 +217,18 @@ Retrieves all stocks with optional filtering, sorting, and pagination.
         "symbol": "AAPL",
         "companyName": "Apple Inc.",
         "currentPrice": 250.50,
-        "industry": "Technology",
+        "sector": "Technology",
         "marketCap": 2500000000000,
-        "createdAt": "2026-03-10T10:30:00Z",
-        "updatedAt": null
+        "comments": []
       },
       {
         "id": 2,
         "symbol": "MSFT",
         "companyName": "Microsoft Corporation",
         "currentPrice": 380.25,
-        "industry": "Technology",
+        "sector": "Technology",
         "marketCap": 2800000000000,
-        "createdAt": "2026-03-11T14:15:00Z",
-        "updatedAt": null
+        "comments": []
       }
     ],
     "pagination": {
@@ -246,8 +255,8 @@ curl -X GET "https://localhost:5001/api/stocks" \
 curl -X GET "https://localhost:5001/api/stocks?pageNumber=1&pageSize=20" \
   -H "Content-Type: application/json"
 
-# Filter by industry
-curl -X GET "https://localhost:5001/api/stocks?industry=Technology" \
+# Filter by sector
+curl -X GET "https://localhost:5001/api/stocks?sector=Technology" \
   -H "Content-Type: application/json"
 ```
 
@@ -271,10 +280,9 @@ Retrieves a specific stock by its ID.
     "symbol": "AAPL",
     "companyName": "Apple Inc.",
     "currentPrice": 250.50,
-    "industry": "Technology",
+    "sector": "Technology",
     "marketCap": 2500000000000,
-    "createdAt": "2026-03-10T10:30:00Z",
-    "updatedAt": null
+    "comments": []
   },
   "message": "Stock retrieved successfully",
   "errors": null
@@ -314,7 +322,7 @@ Updates an existing stock.
   "symbol": "AAPL",
   "companyName": "Apple Inc.",
   "currentPrice": 275.00,
-  "industry": "Technology",
+  "sector": "Technology",
   "marketCap": 2750000000000
 }
 ```
@@ -360,7 +368,7 @@ curl -X PATCH "https://localhost:5001/api/stocks/1" \
     "symbol": "AAPL",
     "companyName": "Apple Inc.",
     "currentPrice": 275.00,
-    "industry": "Technology",
+    "sector": "Technology",
     "marketCap": 2750000000000
   }'
 ```
@@ -729,66 +737,7 @@ curl -X DELETE "https://localhost:5001/api/comments/1" \
 
 ### Change Password
 
-Allows an authenticated user to update their password.
-
-**Endpoint**: `PATCH /api/auth/profile/change-password`
-
-**Request Headers**:
-```
-Authorization: Bearer {jwt}
-Content-Type: application/json
-```
-
-**Request Body**:
-```json
-{
-  "currentPassword": "OldPassword123!",
-  "newPassword": "NewStrongPassword123!",
-  "confirmPassword": "NewStrongPassword123!"
-}
-```
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": true,
-  "message": "Password changed successfully",
-  "errors": null
-}
-```
-
-**Response (400 Bad Request)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Current password is required", "New password must be at least 8 characters", "New password and confirm password must match"]
-}
-```
-
-**Response (401 Unauthorized)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Invalid current password"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X PATCH "https://localhost:5001/api/auth/profile/change-password" \
-  -H "Authorization: Bearer {jwt}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "currentPassword": "OldPassword123!",
-    "newPassword": "NewStrongPassword123!",
-    "confirmPassword": "NewStrongPassword123!"
-  }'
-```
+`ChangePasswordCommand` and validation exist in the application layer, but there is currently no public HTTP endpoint exposed for password changes in `AuthController`.
 
 ---
 
@@ -796,7 +745,7 @@ curl -X PATCH "https://localhost:5001/api/auth/profile/change-password" \
 
 #### Resend Confirmation Token
 
-Generates a new email confirmation token for the user. In production, this would send an email; here it returns the token for testing.
+Creates and attempts to send a new email confirmation link for the user. In development, the response may also include an `emailConfirmationUrl`.
 
 **Endpoint**: `POST /api/auth/resend-confirmation`
 
@@ -812,9 +761,13 @@ Generates a new email confirmation token for the user. In production, this would
 {
   "success": true,
   "data": {
-    "token": "..."
+    "success": true,
+    "token": null,
+    "message": "Email confirmation link sent",
+    "emailConfirmationUrl": "https://localhost:5001/api/auth/confirm-email?userId=<guid>&token=<token>",
+    "emailSent": true
   },
-  "message": "Email confirmation token generated",
+  "message": "Email confirmation token created",
   "errors": null
 }
 ```
@@ -874,7 +827,7 @@ These endpoints require `Admin` role authorization.
 
 Retrieves all registered users for admin management.
 
-**Endpoint**: `GET /api/auth/users`
+**Endpoint**: `GET /api/auth/admin/users`
 
 **Request Headers**:
 ```
@@ -898,9 +851,154 @@ Authorization: Bearer {jwt}
 }
 ```
 
-**Response (403 Forbidden)**:
+---
+
+## Portfolio Endpoints
+
+### Get Portfolio
+
+Retrieve stocks in the authenticated user portfolio.
+
+**Endpoint**: `GET /api/portfolio`
+
+**Request Headers**:
+```
+Authorization: Bearer {jwt}
+```
+
+**Response 200 OK**:
 ```json
 {
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "symbol": "AAPL",
+      "companyName": "Apple Inc.",
+      "currentPrice": 250.50,
+      "sector": "Technology",
+      "marketCap": 2500000000000,
+      "comments": []
+    }
+  ],
+  "message": "Portfolio retrieved successfully",
+  "errors": null
+}
+```
+
+**Example cURL**:
+```bash
+curl -X GET "https://localhost:5001/api/portfolio" \
+  -H "Authorization: Bearer {jwt}" \
+  -H "Content-Type: application/json"
+```
+
+---
+
+### Add to Portfolio by Stock ID
+
+Add an existing local stock to portfolio.
+
+**Endpoint**: `POST /api/portfolio/{stockId}`
+
+**Path Parameters**:
+- `stockId` (int): ID of existing local stock.
+
+**Response 200 OK**:
+```json
+{
+  "success": true,
+  "data": true,
+  "message": "Stock added to portfolio",
+  "errors": null
+}
+```
+
+**Response 404 Not Found**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["Stock with ID {id} not found"]
+}
+```
+
+**Example cURL**:
+```bash
+curl -X POST "https://localhost:5001/api/portfolio/1" \
+  -H "Authorization: Bearer {jwt}" \
+  -H "Content-Type: application/json"
+```
+
+---
+
+### Add to Portfolio by Symbol (FMP Fallback)
+
+Add a stock to portfolio by symbol. If missing locally, resolves from FMP and stores locally.
+
+**Endpoint**: `POST /api/portfolio/symbol/{symbol}`
+
+**Path Parameters**:
+- `symbol` (string): Stock symbol, e.g. `AAPL`.
+
+**Response 200 OK**:
+```json
+{
+  "success": true,
+  "data": true,
+  "message": "Stock added to portfolio",
+  "errors": null
+}
+```
+
+**Response 404 Not Found**:
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["Stock symbol '{symbol}' not found in FMP."]
+}
+```
+
+**Example cURL**:
+```bash
+curl -X POST "https://localhost:5001/api/portfolio/symbol/AAPL" \
+  -H "Authorization: Bearer {jwt}" \
+  -H "Content-Type: application/json"
+```
+
+---
+
+### Remove from Portfolio
+
+Soft remove a stock from portfolio (hard delete optionally via query).
+
+**Endpoint**: `DELETE /api/portfolio/{stockId}`
+
+**Path Parameters**:
+- `stockId` (int): stock id.
+
+**Query**:
+- `hardDelete` (boolean, optional)
+
+**Response 200 OK**:
+```json
+{
+  "success": true,
+  "data": true,
+  "message": "Stock soft removed from portfolio",
+  "errors": null
+}
+```
+
+**Example cURL**:
+```bash
+curl -X DELETE "https://localhost:5001/api/portfolio/1" \
+  -H "Authorization: Bearer {jwt}" \
+  -H "Content-Type: application/json"
+```
   "success": false,
   "data": null,
   "message": null,
@@ -910,7 +1008,7 @@ Authorization: Bearer {jwt}
 
 **Example cURL**:
 ```bash
-curl -X GET "https://localhost:5001/api/auth/users" \
+curl -X GET "https://localhost:5001/api/auth/admin/users" \
   -H "Authorization: Bearer {admin_jwt}"
 ```
 
@@ -918,10 +1016,7 @@ curl -X GET "https://localhost:5001/api/auth/users" \
 
 Updates a user’s role.
 
-**Endpoint**: `PATCH /api/auth/users/{userId}/role`
-
-**Path Parameters**:
-- `userId` (string, required): User ID
+**Endpoint**: `POST /api/auth/admin/assign-role`
 
 **Request Headers**:
 ```
@@ -932,6 +1027,7 @@ Content-Type: application/json
 **Request Body**:
 ```json
 {
+  "userId": "<guid>",
   "role": "Admin"
 }
 ```
@@ -940,7 +1036,11 @@ Content-Type: application/json
 ```json
 {
   "success": true,
-  "data": true,
+  "data": {
+    "success": true,
+    "token": null,
+    "message": "Role assigned successfully"
+  },
   "message": "Role assigned successfully",
   "errors": null
 }
@@ -958,10 +1058,10 @@ Content-Type: application/json
 
 **Example cURL**:
 ```bash
-curl -X PATCH "https://localhost:5001/api/auth/users/{userId}/role" \
+curl -X POST "https://localhost:5001/api/auth/admin/assign-role" \
   -H "Authorization: Bearer {admin_jwt}" \
   -H "Content-Type: application/json" \
-  -d '{"role":"Admin"}'
+  -d '{"userId":"<guid>","role":"Admin"}'
 ```
 
 ---
@@ -1051,7 +1151,7 @@ $body = @{
     symbol = "AAPL"
     companyName = "Apple Inc."
     currentPrice = 250.50
-    industry = "Technology"
+    sector = "Technology"
     marketCap = 2500000000000
 } | ConvertTo-Json
 
@@ -1076,7 +1176,7 @@ $updateBody = @{
     symbol = "AAPL"
     companyName = "Apple Inc."
     currentPrice = 275.00
-    industry = "Technology"
+    sector = "Technology"
     marketCap = 2750000000000
 } | ConvertTo-Json
 
@@ -1107,7 +1207,7 @@ Content-Type: application/json
   "symbol": "AAPL",
   "companyName": "Apple Inc.",
   "currentPrice": 250.50,
-  "industry": "Technology",
+  "sector": "Technology",
   "marketCap": 2500000000000
 }
 
@@ -1125,7 +1225,7 @@ Content-Type: application/json
   "symbol": "AAPL",
   "companyName": "Apple Inc.",
   "currentPrice": 275.00,
-  "industry": "Technology",
+  "sector": "Technology",
   "marketCap": 2750000000000
 }
 
@@ -1135,23 +1235,28 @@ DELETE {{baseUrl}}/stocks/{{stockId}}
 
 ---
 
-## Industry Values
+## Sector Values
 
-Valid industry enum values:
+Valid sector values:
 
 ```
-Technology
-Healthcare
-Finance
+Basic Materials
+Communication Services
+Consumer Cyclical
+Consumer Defensive
 Energy
-Consumer
-Industrial
-Telecommunications
-Utilities
-RealEstate
-Materials
-Transportation
+Entertainment
+Finance
+Financial Services
+Healthcare
+Industrials
+Manufacturing
+Other
+Real Estate
 Retail
+Technology
+Telecommunications
+Transportation
 ```
 
 ---

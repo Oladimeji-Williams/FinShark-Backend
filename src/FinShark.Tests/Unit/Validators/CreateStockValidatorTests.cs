@@ -25,7 +25,7 @@ public class CreateStockValidatorTests
             "AAPL",
             "Apple Inc.",
             150.50m,
-            IndustryType.Technology);
+            SectorType.Technology);
 
         // Act
         var result = await _validator.ValidateAsync(command);
@@ -195,7 +195,7 @@ public class CreateStockValidatorTests
             "AAPL",
             "Apple Inc.",
             150.50m,
-            IndustryType.Technology,
+            SectorType.Technology,
             2800000000000);
 
         // Act

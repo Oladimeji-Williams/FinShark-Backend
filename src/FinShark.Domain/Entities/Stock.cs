@@ -9,7 +9,8 @@ public class Stock : BaseEntity
     public decimal CurrentPrice { get; private set; }
     public decimal Purchase { get; private set; }
     public decimal LastDiv { get; private set; }
-    public IndustryType Industry { get; set; } = IndustryType.Other;
+    public SectorType Sector { get; set; } = SectorType.Other;
+
     public decimal MarketCap { get; set; }
     public List<Comment> Comments { get; set; } = new List<Comment>();
     public ICollection<PortfolioItem> PortfolioItems { get; set; } = new List<PortfolioItem>();
@@ -30,12 +31,12 @@ public class Stock : BaseEntity
     }
 
     public void Update(string? symbol = null, string? companyName = null, decimal? currentPrice = null, 
-        IndustryType? industry = null, decimal? marketCap = null)
+        SectorType? sector = null, decimal? marketCap = null)
     {
         if (!string.IsNullOrWhiteSpace(symbol)) Symbol = symbol;
         if (!string.IsNullOrWhiteSpace(companyName)) CompanyName = companyName;
         if (currentPrice.HasValue && currentPrice.Value > 0) CurrentPrice = currentPrice.Value;
-        if (industry.HasValue) Industry = industry.Value;
+        if (sector.HasValue) Sector = sector.Value;
         if (marketCap.HasValue && marketCap.Value >= 0) MarketCap = marketCap.Value;
     }
 }

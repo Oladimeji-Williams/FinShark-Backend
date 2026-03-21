@@ -1,4 +1,4 @@
-﻿using FinShark.Application.Dtos;
+using FinShark.Application.Dtos;
 using FinShark.Domain.Exceptions;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -54,6 +54,11 @@ public sealed class ExceptionMiddleware
             _logger.LogWarning(cnfex, "Resource not found");
             await HandleNotFoundExceptionAsync(context, cnfex);
         }
+        catch (FMPServiceException fmpEx)
+        {
+            _logger.LogWarning(fmpEx, "FMP service exception occurred");
+            await HandleFmpServiceExceptionAsync(context, fmpEx);
+        }
         catch (FinSharkException fex)
         {
             _logger.LogWarning(fex, "Domain exception occurred");
@@ -103,6 +108,19 @@ public sealed class ExceptionMiddleware
         context.Response.StatusCode = (int)HttpStatusCode.Conflict;
 
         var response = ApiResponse<object>.FailureResponse(exception.Message);
+
+        return WriteJsonAsync(context, response);
+    }
+
+    private static Task HandleFmpServiceExceptionAsync(HttpContext context, FMPServiceException exception)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+        var response = ApiResponse<object>.FailureResponse(
+            exception.Message,
+            exception.FmpStatusCode,
+            exception.Suggestion);
 
         return WriteJsonAsync(context, response);
     }

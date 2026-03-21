@@ -58,6 +58,10 @@ public static class CommentEntityConfiguration
             entity.Property<DateTime?>("Modified")
                 .HasComment("Record last update timestamp");
 
+            entity.Property<bool>(nameof(Comment.IsDeleted))
+                .HasDefaultValue(false)
+                .HasComment("Soft delete flag");
+
             entity.Property<string>("CreatedBy")
                 .HasMaxLength(450)
                 .HasComment("Record creator user id");

@@ -22,8 +22,9 @@ public sealed class RemoveStockFromPortfolioCommandHandler : IRequestHandler<Rem
         if (request == null) throw new ArgumentNullException(nameof(request));
         if (string.IsNullOrWhiteSpace(request.UserId)) throw new ArgumentException("UserId cannot be empty", nameof(request.UserId));
 
-        _logger.LogInformation("Removing stock {StockId} from portfolio for user {UserId}", request.StockId, request.UserId);
-        var result = await _portfolioRepository.RemoveStockFromPortfolioAsync(request.UserId, request.StockId, cancellationToken);
+        _logger.LogInformation("Removing stock {StockId} from portfolio for user {UserId}, hardDelete={HardDelete}", request.StockId, request.UserId, request.HardDelete);
+
+        var result = await _portfolioRepository.RemoveStockFromPortfolioAsync(request.UserId, request.StockId, hardDelete: request.HardDelete, cancellationToken: cancellationToken);
 
         if (!result)
         {

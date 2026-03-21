@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using FinShark.Application.Dtos;
 using FinShark.Application.Mappers;
 using FinShark.Application.Common;
@@ -24,7 +24,18 @@ public sealed class GetAllCommentsQueryHandler : IRequestHandler<GetAllCommentsQ
         _logger.LogInformation("Getting all comments. Page: {PageNumber}, PageSize: {PageSize}",
             request.PageNumber, request.PageSize);
 
-        var comments = await _commentRepository.GetAllAsync(request.PageNumber, request.PageSize, cancellationToken);
+        var comments = await _commentRepository.GetAllAsync(
+            request.PageNumber,
+            request.PageSize,
+            request.StockId,
+            request.StockSymbol,
+            request.MinRating,
+            request.MaxRating,
+            request.TitleContains,
+            request.ContentContains,
+            request.SortBy,
+            request.SortDirection,
+            cancellationToken);
         var commentDtos = CommentMapper.ToDtoList(comments).ToList();
         var isPaged = request.PageNumber.HasValue || request.PageSize.HasValue;
         var totalCount = isPaged

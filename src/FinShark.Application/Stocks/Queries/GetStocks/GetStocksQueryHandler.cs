@@ -1,4 +1,4 @@
-﻿using FinShark.Application.Dtos;
+using FinShark.Application.Dtos;
 using FinShark.Application.Mappers;
 using FinShark.Application.Common;
 using FinShark.Domain.Queries;

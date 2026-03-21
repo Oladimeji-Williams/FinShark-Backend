@@ -1,8 +1,9 @@
-﻿using FinShark.Application.Dtos;
+using FinShark.Application.Dtos;
 using FinShark.Application.Stocks.Commands.CreateStock;
 using FinShark.Application.Stocks.Commands.DeleteStock;
 using FinShark.Application.Stocks.Commands.UpdateStock;
 using FinShark.Application.Stocks.Queries.GetStockById;
+using FinShark.Application.Stocks.Queries.GetStockQuoteFromFmp;
 using FinShark.Application.Stocks.Queries.GetStocks;
 using FinShark.Domain.Queries;
 using MediatR;
@@ -74,7 +75,7 @@ public sealed class StocksController : ControllerBase
             createStockRequestDto.Symbol,
             createStockRequestDto.CompanyName,
             createStockRequestDto.CurrentPrice,
-            createStockRequestDto.Industry,
+            createStockRequestDto.Sector,
             createStockRequestDto.MarketCap
         );
 
@@ -105,6 +106,46 @@ public sealed class StocksController : ControllerBase
     }
 
     /// <summary>
+    /// Get a stock quote from Financial Modeling Prep by symbol
+    /// </summary>
+    /// <param name="symbol">Stock symbol</param>
+    [HttpGet("quote/{symbol}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<GetStockResponseDto>>> GetStockQuoteFromFmp(
+        string symbol,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("GET /api/stocks/quote/{Symbol} - Retrieving FMP quote", symbol);
+
+        var result = await _mediator.Send(new GetStockQuoteFromFmpQuery(symbol), cancellationToken);
+        var response = ApiResponse<GetStockResponseDto>.SuccessResponse(result, "Stock quote retrieved from FMP.");
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Get full FMP company profile for a stock symbol
+    /// </summary>
+    /// <param name="symbol">Stock symbol</param>
+    [HttpGet("quote/full/{symbol}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<GetFullStockQuoteResponseDto>>> GetFullStockQuoteFromFmp(
+        string symbol,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("GET /api/stocks/quote/full/{Symbol} - Retrieving full FMP profile", symbol);
+
+        var result = await _mediator.Send(new GetFullStockQuoteFromFmpQuery(symbol), cancellationToken);
+        var response = ApiResponse<GetFullStockQuoteResponseDto>.SuccessResponse(result, "Full FMP stock profile retrieved.");
+        return Ok(response);
+    }
+
+    /// <summary>
     /// Update an existing stock
     /// </summary>
     /// <param name="id">Stock ID to update</param>
@@ -128,7 +169,7 @@ public sealed class StocksController : ControllerBase
             Symbol: updateStockRequestDto.Symbol,
             CompanyName: updateStockRequestDto.CompanyName,
             CurrentPrice: updateStockRequestDto.CurrentPrice,
-            Industry: updateStockRequestDto.Industry,
+            Sector: updateStockRequestDto.Sector,
             MarketCap: updateStockRequestDto.MarketCap
         );
 
@@ -144,19 +185,28 @@ public sealed class StocksController : ControllerBase
     /// <param name="id">Stock ID to delete</param>
     /// <returns>Success response</returns>
     [HttpDelete("{id:int:min(1)}")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<bool>>> DeleteStock(
         int id,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] bool hardDelete = false)
     {
-        _logger.LogInformation("DELETE /api/stocks/{Id} - Deleting stock with ID: {StockId}", id, id);
+        _logger.LogInformation("DELETE /api/stocks/{Id} - Deleting stock with ID: {StockId}, hardDelete={HardDelete}", id, id, hardDelete);
 
-        var command = new DeleteStockCommand(id);
+        if (hardDelete && !User.IsInRole("Admin"))
+        {
+            _logger.LogWarning("Hard delete attempt by non-admin for stock {StockId}", id);
+            return Forbid();
+        }
+
+        var command = new DeleteStockCommand(id, HardDelete: hardDelete);
         var result = await _mediator.Send(command, cancellationToken);
 
-        var response = ApiResponse<bool>.SuccessResponse(result, "Stock deleted successfully");
+        var response = ApiResponse<bool>.SuccessResponse(result, hardDelete ? "Stock hard deleted successfully" : "Stock soft deleted successfully");
         return Ok(response);
     }
 }

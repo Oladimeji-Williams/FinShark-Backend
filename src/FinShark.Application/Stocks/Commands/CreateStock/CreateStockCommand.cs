@@ -12,6 +12,6 @@ public sealed record CreateStockCommand(
     string Symbol,
     string CompanyName,
     decimal CurrentPrice,
-    IndustryType Industry = default,
+    SectorType Sector = default,
     decimal MarketCap = 0
 ) : IRequest<CreateStockResponseDto>;

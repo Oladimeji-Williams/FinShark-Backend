@@ -359,6 +359,54 @@ public sealed class CreateMyEntityValidator : AbstractValidator<CreateMyEntityRe
 }
 ```
 
+### Portfolio Endpoint Quick Guide
+
+#### Add stock by symbol (FMP fallback)
+
+Endpoint:
+```http
+POST /api/portfolio/symbol/{symbol}
+```
+
+Headers:
+```
+Authorization: Bearer {jwt}
+Content-Type: application/json
+```
+
+Description:
+- Adds a stock to a user portfolio by symbol.
+- If stock is missing locally, fetches current quote from FMP and persists it locally first.
+
+Success (200):
+```json
+{
+  "success": true,
+  "data": true,
+  "message": "Stock added to portfolio",
+  "errors": null
+}
+```
+
+Not found (404):
+```json
+{
+  "success": false,
+  "data": null,
+  "message": null,
+  "errors": ["Stock symbol '{symbol}' not found in FMP."]
+}
+```
+
+cURL Example:
+```bash
+curl -X POST "https://localhost:5001/api/portfolio/symbol/AAPL" \
+  -H "Authorization: Bearer {jwt}" \
+  -H "Content-Type: application/json"
+```
+
+---
+
 ### Controller Template
 
 ```csharp
@@ -529,6 +577,8 @@ DELETE /api/comments/{id}         → Delete comment
 ---
 
 ## Architecture Quick Guide
+
+- For new external services (like FMP), create a query+handler in Application and keep controller thin. See ARCHITECTURE.md section "FMP Query/Handler Separation Example".
 
 ### Repository Interface Guideline
 

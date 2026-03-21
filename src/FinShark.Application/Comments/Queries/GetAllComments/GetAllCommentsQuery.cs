@@ -1,5 +1,6 @@
 using MediatR;
 using FinShark.Application.Dtos;
+using FinShark.Domain.Queries;
 
 namespace FinShark.Application.Comments.Queries.GetAllComments;
 
@@ -8,5 +9,13 @@ namespace FinShark.Application.Comments.Queries.GetAllComments;
 /// </summary>
 public sealed record GetAllCommentsQuery(
     int? PageNumber = null,
-    int? PageSize = null
+    int? PageSize = null,
+    int? StockId = null,
+    string? StockSymbol = null,
+    int? MinRating = null,
+    int? MaxRating = null,
+    string? TitleContains = null,
+    string? ContentContains = null,
+    CommentSortBy SortBy = CommentSortBy.Created,
+    SortDirection SortDirection = SortDirection.Desc
 ) : IRequest<PagedResult<GetCommentResponseDto>>;

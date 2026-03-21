@@ -37,13 +37,14 @@ public static class StockEntityConfiguration
                 .HasPrecision(18, 2)
                 .HasComment("Stock price with 2 decimal places");
 
-            // Industry Column
-            entity.Property(e => e.Industry)
+            // Sector Column (stored in existing Sector column for compatibility)
+            entity.Property(e => e.Sector)
+                .HasColumnName("Sector")
                 .HasConversion(
-                    industry => industry.Value,
-                    value => FinShark.Domain.ValueObjects.IndustryType.From(value))
+                    sector => sector.Value,
+                    value => FinShark.Domain.ValueObjects.SectorType.From(value))
                 .HasMaxLength(100)
-                .HasComment("Industry sector");
+                .HasComment("Sector sector");
 
             // Market Cap Column
             entity.Property(e => e.MarketCap)
@@ -61,6 +62,10 @@ public static class StockEntityConfiguration
             entity.Property<string>("CreatedBy")
                 .HasMaxLength(450)
                 .HasComment("Record creator user id");
+
+            entity.Property<bool>(nameof(Stock.IsDeleted))
+                .HasDefaultValue(false)
+                .HasComment("Soft delete flag");
 
             entity.Property<string>("ModifiedBy")
                 .HasMaxLength(450)

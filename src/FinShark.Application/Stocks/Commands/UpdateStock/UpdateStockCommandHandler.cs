@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using FinShark.Domain.Repositories;
 using FinShark.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -44,11 +44,8 @@ public sealed class UpdateStockCommandHandler : IRequestHandler<UpdateStockComma
                 symbol: request.Symbol,
                 companyName: request.CompanyName,
                 currentPrice: request.CurrentPrice,
-                industry: request.Industry,
-                marketCap: request.MarketCap
-            );
+                sector: request.Sector);
 
-            // Persist changes
             await _stockRepository.UpdateAsync(existingStock, cancellationToken);
 
             _logger.LogInformation("Successfully updated stock with ID: {StockId}", request.Id);

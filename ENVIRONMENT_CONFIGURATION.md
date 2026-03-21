@@ -181,7 +181,7 @@ dotnet test --configuration Debug /p:ASPNETCORE_ENVIRONMENT=Testing
 - Logging disabled (performance)
 - No detailed errors
 - Swagger disabled
-- Each test gets fresh DB
+- Dev/test Data Protection keys are persisted under `src/FinShark.API/App_Data/DataProtection-Keys`
 
 ---
 

@@ -65,12 +65,13 @@ namespace FinShark.Persistence.Migrations
                     CurrentPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Stock price with 2 decimal places"),
                     Purchase = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     LastDiv = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Industry = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, comment: "Industry sector"),
+                    Sector = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, comment: "Sector sector"),
                     MarketCap = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Market capitalization"),
                     Created = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()", comment: "Record creation timestamp"),
                     CreatedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "Record creator user id"),
                     Modified = table.Column<DateTime>(type: "datetime2", nullable: true, comment: "Record last update timestamp"),
-                    ModifiedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "Record modifier user id")
+                    ModifiedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "Record modifier user id"),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false, comment: "Soft delete flag")
                 },
                 constraints: table =>
                 {
@@ -197,7 +198,8 @@ namespace FinShark.Persistence.Migrations
                     Created = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()", comment: "Record creation timestamp"),
                     CreatedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "Record creator user id"),
                     Modified = table.Column<DateTime>(type: "datetime2", nullable: true, comment: "Record last update timestamp"),
-                    ModifiedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "Record modifier user id")
+                    ModifiedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "Record modifier user id"),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false, comment: "Soft delete flag")
                 },
                 constraints: table =>
                 {
@@ -228,7 +230,8 @@ namespace FinShark.Persistence.Migrations
                     Created = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()", comment: "When this stock was added to user portfolio"),
                     CreatedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "User who added this portfolio item"),
                     Modified = table.Column<DateTime>(type: "datetime2", nullable: true, comment: "When this stock portfolio item was modified"),
-                    ModifiedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "User who modified this portfolio item")
+                    ModifiedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "User who modified this portfolio item"),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false, comment: "Soft delete flag for portfolio item")
                 },
                 constraints: table =>
                 {

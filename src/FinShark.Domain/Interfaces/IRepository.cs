@@ -30,7 +30,7 @@ public interface IRepository<T> where T : class
     /// <summary>
     /// Deletes an entity from the database
     /// </summary>
-    Task DeleteAsync(T entity, CancellationToken cancellationToken = default);
+    Task DeleteAsync(T entity, bool hardDelete = false, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the total count of entities

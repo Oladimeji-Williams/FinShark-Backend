@@ -1,4 +1,4 @@
-﻿namespace FinShark.Domain.Exceptions;
+namespace FinShark.Domain.Exceptions;
 
 /// <summary>
 /// Exception thrown when a comment is not found

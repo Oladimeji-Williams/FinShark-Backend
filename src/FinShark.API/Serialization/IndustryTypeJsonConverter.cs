@@ -4,13 +4,13 @@ using FinShark.Domain.ValueObjects;
 namespace FinShark.API.Serialization;
 
 /// <summary>
-/// JSON converter for IndustryType value object (Newtonsoft.Json).
+/// JSON converter for SectorType value object (Newtonsoft.Json).
 /// Accepts string names (e.g., "Technology") and legacy numeric codes.
 /// </summary>
-public sealed class IndustryTypeJsonConverter : JsonConverter
+public sealed class SectorTypeJsonConverter : JsonConverter
 {
     public override bool CanConvert(Type objectType) =>
-        objectType == typeof(IndustryType) || objectType == typeof(IndustryType?);
+        objectType == typeof(SectorType) || objectType == typeof(SectorType?);
 
     public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
     {
@@ -21,18 +21,18 @@ public sealed class IndustryTypeJsonConverter : JsonConverter
                 return null;
             }
 
-            throw new JsonSerializationException("Industry type is required.");
+            throw new JsonSerializationException("Sector type is required.");
         }
 
         if (reader.TokenType == JsonToken.String)
         {
             var raw = reader.Value?.ToString();
-            if (IndustryType.TryFrom(raw, out var industry))
+            if (SectorType.TryFrom(raw, out var industry))
             {
                 return industry;
             }
 
-            throw new JsonSerializationException($"Invalid industry type '{raw}'.");
+            throw new JsonSerializationException($"Invalid sector type '{raw}'.");
         }
 
         if (reader.TokenType == JsonToken.Integer)
@@ -40,16 +40,16 @@ public sealed class IndustryTypeJsonConverter : JsonConverter
             if (reader.Value is long longValue)
             {
                 var code = Convert.ToInt32(longValue);
-                if (IndustryType.TryFrom(code, out var industry))
+                if (SectorType.TryFrom(code, out var industry))
                 {
                     return industry;
                 }
             }
 
-            throw new JsonSerializationException("Invalid industry type code.");
+            throw new JsonSerializationException("Invalid sector type code.");
         }
 
-        throw new JsonSerializationException("Invalid token for industry type.");
+        throw new JsonSerializationException("Invalid token for sector type.");
     }
 
     public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
@@ -60,7 +60,7 @@ public sealed class IndustryTypeJsonConverter : JsonConverter
             return;
         }
 
-        var industry = (IndustryType)value;
+        var industry = (SectorType)value;
         writer.WriteValue(industry.Value);
     }
 

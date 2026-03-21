@@ -18,7 +18,7 @@ public class StockMapperTests
         // Arrange
         var stock = new Stock("AAPL", "Apple Inc.", 150.50m)
         {
-            Industry = IndustryType.Technology,
+            Sector = SectorType.Technology,
             MarketCap = 2800000000000
         };
         stock.GetType().GetProperty("Id")?.SetValue(stock, 1);
@@ -35,7 +35,7 @@ public class StockMapperTests
         result.Symbol.Should().Be("AAPL");
         result.CompanyName.Should().Be("Apple Inc.");
         result.CurrentPrice.Should().Be(150.50m);
-        result.Industry.Should().Be(IndustryType.Technology);
+        result.Sector.Should().Be(SectorType.Technology);
         result.MarketCap.Should().Be(2800000000000);
         result.Comments.Should().HaveCount(3);
         result.Comments[0].Title.Should().Be("Great stock");
@@ -61,8 +61,8 @@ public class StockMapperTests
         // Arrange
         var stocks = new List<Stock>
         {
-            new Stock("AAPL", "Apple Inc.", 150.50m) { Industry = IndustryType.Technology },
-            new Stock("MSFT", "Microsoft Corp.", 380.00m) { Industry = IndustryType.Technology }
+            new Stock("AAPL", "Apple Inc.", 150.50m) { Sector = SectorType.Technology },
+            new Stock("MSFT", "Microsoft Corp.", 380.00m) { Sector = SectorType.Technology }
         };
 
         // Act
@@ -108,7 +108,7 @@ public class StockMapperTests
             Symbol = "AAPL",
             CompanyName = "Apple Inc.",
             CurrentPrice = 150.50m,
-            Industry = IndustryType.Technology,
+            Sector = SectorType.Technology,
             MarketCap = 2800000000000
         };
 
@@ -120,7 +120,7 @@ public class StockMapperTests
         result.Symbol.Should().Be("AAPL");
         result.CompanyName.Should().Be("Apple Inc.");
         result.CurrentPrice.Should().Be(150.50m);
-        result.Industry.Should().Be(IndustryType.Technology);
+        result.Sector.Should().Be(SectorType.Technology);
         result.MarketCap.Should().Be(2800000000000);
     }
 
@@ -144,7 +144,7 @@ public class StockMapperTests
             "MSFT",
             "Microsoft Corp.",
             380.00m,
-            IndustryType.Technology,
+            SectorType.Technology,
             10000000000000
         );
 
@@ -156,7 +156,7 @@ public class StockMapperTests
         result.Symbol.Should().Be("MSFT");
         result.CompanyName.Should().Be("Microsoft Corp.");
         result.CurrentPrice.Should().Be(380.00m);
-        result.Industry.Should().Be(IndustryType.Technology);
+        result.Sector.Should().Be(SectorType.Technology);
         result.MarketCap.Should().Be(10000000000000);
     }
 

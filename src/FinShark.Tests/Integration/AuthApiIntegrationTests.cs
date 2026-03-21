@@ -31,6 +31,7 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
     }
 }
 
+[Collection("Integration")]
 public sealed class AuthApiIntegrationTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
@@ -205,7 +206,7 @@ public sealed class AuthApiIntegrationTests : IClassFixture<CustomWebApplication
             Symbol = "TST1",
             CompanyName = "Test Stock 1",
             CurrentPrice = 12.34m,
-            Industry = "Technology",
+            Sector = "Technology",
             MarketCap = 5000000m
         }));
         createStockResponse.EnsureSuccessStatusCode();
