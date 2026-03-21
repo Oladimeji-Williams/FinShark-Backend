@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using FinShark.Domain.Entities;
 using FinShark.Domain.Repositories;
 using FinShark.Domain.Exceptions;

@@ -1,4 +1,4 @@
-﻿using FinShark.Domain.Entities;
+using FinShark.Domain.Entities;
 using FinShark.Domain.Queries;
 using FinShark.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -138,9 +138,9 @@ public sealed class StockRepository(
             query = query.Where(s => EF.Functions.Like(s.CompanyName, $"%{companyName}%"));
         }
 
-        if (queryParameters.Industry.HasValue)
+        if (queryParameters.Sector.HasValue)
         {
-            query = query.Where(s => s.Industry == queryParameters.Industry.Value);
+            query = query.Where(s => s.Sector == queryParameters.Sector.Value);
         }
 
         if (queryParameters.MinPrice.HasValue)
@@ -185,8 +185,9 @@ public sealed class StockRepository(
         try
         {
             _logger.LogInformation("Fetching stock with ID: {StockId}", id);
-            var stock = await _context.Stocks.FindAsync(new object[] { id }, cancellationToken: cancellationToken);
-            
+            var stock = await _context.Stocks
+                .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+
             if (stock is null)
             {
                 _logger.LogWarning("Stock with ID {StockId} not found", id);
@@ -256,7 +257,7 @@ public sealed class StockRepository(
             _logger.LogInformation("Fetching portfolio stocks for user: {UserId}", userId);
 
             var portfolioStocks = await _context.PortfolioItems
-                .Where(p => p.UserId == userId)
+                .Where(p => p.UserId == userId && !p.IsDeleted)
                 .Include(p => p.Stock)
                 .ThenInclude(s => s.Comments)
                 .Select(p => p.Stock!)
@@ -280,10 +281,22 @@ public sealed class StockRepository(
         {
             _logger.LogInformation("Adding stock {StockId} to portfolio for user: {UserId}", stockId, userId);
 
-            if (await _context.PortfolioItems.AnyAsync(pi => pi.UserId == userId && pi.StockId == stockId, cancellationToken))
+            var existing = await _context.PortfolioItems
+                .FirstOrDefaultAsync(pi => pi.UserId == userId && pi.StockId == stockId, cancellationToken);
+
+            if (existing != null)
             {
-                _logger.LogInformation("Stock {StockId} is already in portfolio for user: {UserId}", stockId, userId);
-                return false;
+                if (!existing.IsDeleted)
+                {
+                    _logger.LogInformation("Stock {StockId} is already in portfolio for user: {UserId}", stockId, userId);
+                    return false;
+                }
+
+                existing.Restore();
+                _context.PortfolioItems.Update(existing);
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Restored previously deleted portfolio item for stock {StockId} and user: {UserId}", stockId, userId);
+                return true;
             }
 
             var stock = await _context.Stocks.FindAsync(new object[] { stockId }, cancellationToken);
@@ -306,7 +319,7 @@ public sealed class StockRepository(
         }
     }
 
-    public async Task<bool> RemoveStockFromPortfolioAsync(string userId, int stockId, CancellationToken cancellationToken = default)
+    public async Task<bool> RemoveStockFromPortfolioAsync(string userId, int stockId, bool hardDelete = false, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("UserId cannot be empty", nameof(userId));
 
@@ -323,7 +336,18 @@ public sealed class StockRepository(
                 return false;
             }
 
-            _context.PortfolioItems.Remove(portfolioItem);
+            if (hardDelete)
+            {
+                _logger.LogInformation("Hard deleting portfolio item for stock {StockId}, user {UserId}", stockId, userId);
+                _context.PortfolioItems.Remove(portfolioItem);
+            }
+            else
+            {
+                _logger.LogInformation("Soft deleting portfolio item for stock {StockId}, user {UserId}", stockId, userId);
+                portfolioItem.SoftDelete();
+                _context.PortfolioItems.Update(portfolioItem);
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Stock {StockId} removed from portfolio for user: {UserId}", stockId, userId);
@@ -372,14 +396,24 @@ public sealed class StockRepository(
         }
     }
 
-    public async Task DeleteAsync(Stock stock, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Stock stock, bool hardDelete = false, CancellationToken cancellationToken = default)
     {
         if (stock == null) throw new ArgumentNullException(nameof(stock));
 
         try
         {
-            _logger.LogInformation("Deleting stock with ID: {StockId}", stock.Id);
-            _context.Stocks.Remove(stock);
+            if (hardDelete)
+            {
+                _logger.LogInformation("Hard deleting stock with ID: {StockId}", stock.Id);
+                _context.Stocks.Remove(stock);
+            }
+            else
+            {
+                _logger.LogInformation("Soft deleting stock with ID: {StockId}", stock.Id);
+                stock.SoftDelete();
+                _context.Stocks.Update(stock);
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Stock deleted successfully with ID: {StockId}", stock.Id);
         }
@@ -390,3 +424,4 @@ public sealed class StockRepository(
         }
     }
 }
+

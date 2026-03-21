@@ -1,5 +1,6 @@
 using FinShark.Domain.Entities;
 using FinShark.Domain.Interfaces;
+using FinShark.Domain.Queries;
 
 namespace FinShark.Domain.Repositories;
 
@@ -22,6 +23,13 @@ public interface ICommentRepository : IRepository<Comment>
         int stockId,
         int? pageNumber = null,
         int? pageSize = null,
+        string? stockSymbol = null,
+        int? minRating = null,
+        int? maxRating = null,
+        string? titleContains = null,
+        string? contentContains = null,
+        CommentSortBy sortBy = CommentSortBy.Created,
+        SortDirection sortDirection = SortDirection.Desc,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -39,5 +47,16 @@ public interface ICommentRepository : IRepository<Comment>
     /// <param name="pageSize">Number of items per page, null for no pagination</param>
     /// <param name="cancellationToken">Cancellation token for async operations</param>
     /// <returns>Paginated collection of comments ordered by most recent first</returns>
-    Task<IEnumerable<Comment>> GetAllAsync(int? pageNumber = null, int? pageSize = null, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Comment>> GetAllAsync(
+        int? pageNumber = null,
+        int? pageSize = null,
+        int? stockId = null,
+        string? stockSymbol = null,
+        int? minRating = null,
+        int? maxRating = null,
+        string? titleContains = null,
+        string? contentContains = null,
+        CommentSortBy sortBy = CommentSortBy.Created,
+        SortDirection sortDirection = SortDirection.Desc,
+        CancellationToken cancellationToken = default);
 }

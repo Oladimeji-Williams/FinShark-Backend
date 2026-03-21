@@ -1,4 +1,4 @@
-﻿using FinShark.Application.Auth.Commands.Login;
+using FinShark.Application.Auth.Commands.Login;
 using FinShark.Application.Auth.Commands.Register;
 using FinShark.Application.Auth.Commands.UpdateProfile;
 using FinShark.Application.Auth.Validators;

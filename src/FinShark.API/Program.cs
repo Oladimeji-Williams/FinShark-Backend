@@ -1,4 +1,4 @@
-﻿using FinShark.Application;
+using FinShark.Application;
 using FinShark.API.Configuration;
 using FinShark.API.Serialization;
 using FinShark.Infrastructure;
@@ -9,6 +9,8 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Serialization;
 using FinShark.Application.Dtos;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.DataProtection;
+using System.IO;
 
 // ============================================
 // Serilog Configuration
@@ -59,6 +61,19 @@ if (!Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?.Equals("Produ
 
 var builder = WebApplication.CreateBuilder(args);
 
+var useInMemoryDb = bool.TryParse(Environment.GetEnvironmentVariable("FINSHARK_USE_INMEMORY_DB"), out var inMemoryFlag) && inMemoryFlag
+    || bool.TryParse(builder.Configuration["UseInMemoryDatabase"], out var configInMemory) && configInMemory;
+
+if (builder.Environment.IsDevelopment() || useInMemoryDb)
+{
+    var dataProtectionKeysPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtection-Keys");
+    Directory.CreateDirectory(dataProtectionKeysPath);
+
+    builder.Services.AddDataProtection()
+        .SetApplicationName("FinShark")
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+}
+
 // Configure Serilog as the logging provider
 builder.Host.UseSerilog();
 
@@ -93,7 +108,7 @@ builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
     {
         options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-        options.SerializerSettings.Converters.Add(new IndustryTypeJsonConverter());
+        options.SerializerSettings.Converters.Add(new SectorTypeJsonConverter());
         options.SerializerSettings.Converters.Add(new RatingJsonConverter());
     });
 

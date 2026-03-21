@@ -10,5 +10,5 @@ public interface IPortfolioRepository
 {
     Task<IEnumerable<Stock>> GetPortfolioAsync(string userId, CancellationToken cancellationToken = default);
     Task<bool> AddStockToPortfolioAsync(string userId, int stockId, CancellationToken cancellationToken = default);
-    Task<bool> RemoveStockFromPortfolioAsync(string userId, int stockId, CancellationToken cancellationToken = default);
+    Task<bool> RemoveStockFromPortfolioAsync(string userId, int stockId, bool hardDelete = false, CancellationToken cancellationToken = default);
 }

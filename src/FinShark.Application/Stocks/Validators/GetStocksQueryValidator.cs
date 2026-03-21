@@ -1,4 +1,4 @@
-﻿using FinShark.Application.Stocks.Queries.GetStocks;
+using FinShark.Application.Stocks.Queries.GetStocks;
 using FluentValidation;
 
 namespace FinShark.Application.Stocks.Validators;

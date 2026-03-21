@@ -31,6 +31,10 @@ public static class PortfolioItemEntityConfiguration
                 .HasMaxLength(450)
                 .HasComment("User who added this portfolio item");
 
+            entity.Property<bool>(nameof(PortfolioItem.IsDeleted))
+                .HasDefaultValue(false)
+                .HasComment("Soft delete flag for portfolio item");
+
             entity.Property<DateTime?>("Modified")
                 .HasComment("When this stock portfolio item was modified");
 

@@ -101,52 +101,52 @@ public sealed class DataSeeder
             {
                 new Stock("AAPL", "Apple Inc.", 150.25m, purchase: 120.00m, lastDiv: 0.88m) 
                 { 
-                    Industry = IndustryType.Technology,
+                    Sector = SectorType.Technology,
                     MarketCap = 2500000000000m
                 },
                 new Stock("MSFT", "Microsoft Corporation", 320.50m, purchase: 280.00m, lastDiv: 0.62m)
                 {
-                    Industry = IndustryType.Technology,
+                    Sector = SectorType.Technology,
                     MarketCap = 2350000000000m
                 },
                 new Stock("GOOGL", "Alphabet Inc.", 140.75m, purchase: 130.00m, lastDiv: 0m)
                 {
-                    Industry = IndustryType.Technology,
+                    Sector = SectorType.Technology,
                     MarketCap = 1850000000000m
                 },
                 new Stock("AMZN", "Amazon.com Inc.", 165.30m, purchase: 150.25m, lastDiv: 0m)
                 {
-                    Industry = IndustryType.Retail,
+                    Sector = SectorType.Retail,
                     MarketCap = 1700000000000m
                 },
                 new Stock("TSLA", "Tesla Inc.", 245.60m, purchase: 200.00m, lastDiv: 0m)
                 {
-                    Industry = IndustryType.Manufacturing,
+                    Sector = SectorType.Manufacturing,
                     MarketCap = 780000000000m
                 },
                 new Stock("META", "Meta Platforms Inc.", 485.75m, purchase: 450.00m, lastDiv: 0.54m)
                 {
-                    Industry = IndustryType.Technology,
+                    Sector = SectorType.Technology,
                     MarketCap = 1250000000000m
                 },
                 new Stock("NVDA", "NVIDIA Corporation", 875.30m, purchase: 800.00m, lastDiv: 0.32m)
                 {
-                    Industry = IndustryType.Technology,
+                    Sector = SectorType.Technology,
                     MarketCap = 2150000000000m
                 },
                 new Stock("JPM", "JPMorgan Chase & Co.", 195.45m, purchase: 180.00m, lastDiv: 0.98m)
                 {
-                    Industry = IndustryType.Finance,
+                    Sector = SectorType.Finance,
                     MarketCap = 550000000000m
                 },
                 new Stock("V", "Visa Inc.", 250.80m, purchase: 230.00m, lastDiv: 0.42m)
                 {
-                    Industry = IndustryType.Finance,
+                    Sector = SectorType.Finance,
                     MarketCap = 520000000000m
                 },
                 new Stock("DIS", "The Walt Disney Company", 92.15m, purchase: 85.00m, lastDiv: 0.15m)
                 {
-                    Industry = IndustryType.Entertainment,
+                    Sector = SectorType.Entertainment,
                     MarketCap = 168000000000m
                 }
             };

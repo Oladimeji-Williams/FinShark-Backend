@@ -1,4 +1,4 @@
-﻿using FinShark.API.Extensions;
+using FinShark.API.Extensions;
 using FinShark.Application.Comments.Commands.CreateComment;
 using FinShark.Application.Comments.Commands.DeleteComment;
 using FinShark.Application.Comments.Commands.UpdateComment;
@@ -6,6 +6,7 @@ using FinShark.Application.Comments.Queries.GetAllComments;
 using FinShark.Application.Comments.Queries.GetCommentById;
 using FinShark.Application.Comments.Queries.GetCommentsByStockId;
 using FinShark.Application.Dtos;
+using FinShark.Domain.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,11 +43,19 @@ public sealed class CommentsController : ControllerBase
     public async Task<ActionResult<ApiResponse<PagedResult<GetCommentResponseDto>>>> GetAllComments(
         [FromQuery] int? pageNumber,
         [FromQuery] int? pageSize,
-        CancellationToken cancellationToken)
+        [FromQuery] int? stockId,
+        [FromQuery] string? stockSymbol,
+        [FromQuery] int? minRating,
+        [FromQuery] int? maxRating,
+        [FromQuery] string? titleContains,
+        [FromQuery] string? contentContains,
+        [FromQuery] CommentSortBy sortBy = CommentSortBy.Created,
+        [FromQuery] SortDirection sortDirection = SortDirection.Desc,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("GET /api/comments - Retrieving comments");
 
-        var query = new GetAllCommentsQuery(pageNumber, pageSize);
+        var query = new GetAllCommentsQuery(pageNumber, pageSize, stockId, stockSymbol, minRating, maxRating, titleContains, contentContains, sortBy, sortDirection);
         var comments = await _mediator.Send(query, cancellationToken);
 
         var response = ApiResponse<PagedResult<GetCommentResponseDto>>.SuccessResponse(comments, "Comments retrieved successfully");
@@ -87,11 +96,18 @@ public sealed class CommentsController : ControllerBase
         int stockId,
         [FromQuery] int? pageNumber,
         [FromQuery] int? pageSize,
-        CancellationToken cancellationToken)
+        [FromQuery] string? stockSymbol,
+        [FromQuery] int? minRating,
+        [FromQuery] int? maxRating,
+        [FromQuery] string? titleContains,
+        [FromQuery] string? contentContains,
+        [FromQuery] CommentSortBy sortBy = CommentSortBy.Created,
+        [FromQuery] SortDirection sortDirection = SortDirection.Desc,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("GET /api/stocks/{StockId}/comments - Retrieving comments", stockId);
 
-        var query = new GetCommentsByStockIdQuery(stockId, pageNumber, pageSize);
+        var query = new GetCommentsByStockIdQuery(stockId, pageNumber, pageSize, stockSymbol, minRating, maxRating, titleContains, contentContains, sortBy, sortDirection);
         var comments = await _mediator.Send(query, cancellationToken);
 
         var response = ApiResponse<PagedResult<GetCommentResponseDto>>.SuccessResponse(comments, "Comments retrieved successfully");
@@ -159,17 +175,28 @@ public sealed class CommentsController : ControllerBase
     /// </summary>
     /// <param name="id">Comment ID</param>
     [HttpDelete("{id:int:min(1)}")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<bool>>> DeleteComment(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<bool>>> DeleteComment(
+        int id,
+        CancellationToken cancellationToken,
+        [FromQuery] bool hardDelete = false)
     {
-        _logger.LogInformation("DELETE /api/comments/{Id} - Deleting comment", id);
+        _logger.LogInformation("DELETE /api/comments/{Id} - Deleting comment {CommentId}, hardDelete={HardDelete}", id, id, hardDelete);
 
-        var command = new DeleteCommentCommand(id);
+        if (hardDelete && !User.IsInRole("Admin"))
+        {
+            _logger.LogWarning("Hard delete attempt by non-admin for comment {CommentId}", id);
+            return Forbid();
+        }
+
+        var command = new DeleteCommentCommand(id, HardDelete: hardDelete);
         var result = await _mediator.Send(command, cancellationToken);
 
-        var response = ApiResponse<bool>.SuccessResponse(result, "Comment deleted successfully");
+        var response = ApiResponse<bool>.SuccessResponse(result, hardDelete ? "Comment hard deleted successfully" : "Comment soft deleted successfully");
         return Ok(response);
     }
 }

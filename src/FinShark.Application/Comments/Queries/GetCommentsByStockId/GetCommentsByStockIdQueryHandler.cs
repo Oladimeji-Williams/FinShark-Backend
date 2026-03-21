@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using FinShark.Application.Dtos;
 using FinShark.Application.Mappers;
 using FinShark.Application.Common;
@@ -38,6 +38,13 @@ public sealed class GetCommentsByStockIdQueryHandler : IRequestHandler<GetCommen
             request.StockId,
             request.PageNumber,
             request.PageSize,
+            request.StockSymbol,
+            request.MinRating,
+            request.MaxRating,
+            request.TitleContains,
+            request.ContentContains,
+            request.SortBy,
+            request.SortDirection,
             cancellationToken);
 
         var commentDtos = CommentMapper.ToDtoList(comments).ToList();

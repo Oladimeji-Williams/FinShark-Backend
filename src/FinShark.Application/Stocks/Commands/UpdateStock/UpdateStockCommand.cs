@@ -11,5 +11,5 @@ public sealed record UpdateStockCommand(
     string? Symbol = null,
     string? CompanyName = null,
     decimal? CurrentPrice = null,
-    IndustryType? Industry = null,
+    SectorType? Sector = null,
     decimal? MarketCap = null) : IRequest<bool>;

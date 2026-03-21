@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using FinShark.Domain.Repositories;
 using FinShark.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -39,8 +39,16 @@ public sealed class DeleteStockCommandHandler : IRequestHandler<DeleteStockComma
 
         try
         {
-            // Delete the stock
-            await _stockRepository.DeleteAsync(existingStock, cancellationToken);
+            if (request.HardDelete)
+            {
+                _logger.LogInformation("Hard deleting stock with ID: {StockId}", request.Id);
+                await _stockRepository.DeleteAsync(existingStock, hardDelete: true, cancellationToken: cancellationToken);
+            }
+            else
+            {
+                _logger.LogInformation("Soft deleting stock with ID: {StockId}", request.Id);
+                await _stockRepository.DeleteAsync(existingStock, cancellationToken: cancellationToken);
+            }
 
             _logger.LogInformation("Successfully deleted stock with ID: {StockId}", request.Id);
             return true;

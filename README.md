@@ -138,7 +138,7 @@ finshark-backend/
 │       ├── Program.cs
 │       └── appsettings.json
 │
-├── tests/                           # Unit & integration tests
+├── src/FinShark.Tests/               # Unit & integration tests
 ├── FinShark.slnx                    # Solution file
 ├── SETUP.md                         # Setup guide
 ├── IMPLEMENTATION.md                # Feature implementation guide
@@ -152,8 +152,13 @@ The project implements Command Query Responsibility Segregation:
 
 **Commands** (State-Changing)
 ```csharp
-public sealed record CreateStockCommand(string Symbol, string CompanyName, decimal Price) 
-    : IRequest<int>;
+public sealed record CreateStockCommand(
+    string Symbol,
+    string CompanyName,
+    decimal CurrentPrice,
+    SectorType Sector = default,
+    decimal MarketCap = 0
+) : IRequest<CreateStockResponseDto>;
 ```
 
 **Queries** (Read-Only)
@@ -178,7 +183,7 @@ Stock (1) ──────── (N) Dividend
 ├── Symbol          ├── StockId (FK)
 ├── CompanyName     ├── Amount
 ├── CurrentPrice    ├── PaymentDate
-├── Industry        ├── RecordDate
+├── Sector          ├── RecordDate
 ├── MarketCap       ├── ExDividendDate
 ├── CreatedAt       └── CreatedAt
 └── UpdatedAt
@@ -212,8 +217,8 @@ Request:
   "symbol": "AAPL",
   "companyName": "Apple Inc.",
   "currentPrice": 150.50,
-  "industry": "Technology",
-  "marketCap": "2.5T"
+  "sector": "Technology",
+  "marketCap": 2500000000000
 }
 ```
 
@@ -221,7 +226,9 @@ Response (201 Created):
 ```json
 {
   "success": true,
-  "data": 1,
+  "data": {
+    "id": 1
+  },
   "message": "Stock created successfully",
   "errors": null
 }
@@ -238,13 +245,10 @@ dotnet test
 ### Test Structure
 
 ```
-tests/
-├── FinShark.Domain.Tests/
-│   └── Entities/
-├── FinShark.Application.Tests/
-│   └── Handlers/
-└── FinShark.API.Tests/
-    └── Controllers/
+src/FinShark.Tests/
+├── Unit/
+├── Integration/
+└── FinShark.Tests.csproj
 ```
 
 ## 🛠️ Development Workflow

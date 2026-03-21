@@ -1,4 +1,4 @@
-﻿using FinShark.Application.Dtos;
+using FinShark.Application.Dtos;
 using FinShark.Domain.Queries;
 using MediatR;
 

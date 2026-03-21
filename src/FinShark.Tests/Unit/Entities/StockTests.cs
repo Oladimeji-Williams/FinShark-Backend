@@ -120,16 +120,16 @@ public class StockTests
     }
 
     [Fact]
-    public void Update_WithIndustry_ShouldUpdateIndustry()
+    public void Update_WithSector_ShouldUpdateSector()
     {
         // Arrange
         var stock = new Stock("AAPL", "Apple Inc.", 150.50m);
 
         // Act
-        stock.Update(industry: IndustryType.Technology);
+        stock.Update(sector: SectorType.Technology);
 
         // Assert
-        stock.Industry.Should().Be(IndustryType.Technology);
+        stock.Sector.Should().Be(SectorType.Technology);
     }
 
     [Fact]
@@ -156,7 +156,7 @@ public class StockTests
             symbol: "APPL",
             companyName: "Apple Corp",
             currentPrice: 175.00m,
-            industry: IndustryType.Technology,
+            sector: SectorType.Technology,
             marketCap: 3000000000000
         );
 
@@ -164,7 +164,7 @@ public class StockTests
         stock.Symbol.Should().Be("APPL");
         stock.CompanyName.Should().Be("Apple Corp");
         stock.CurrentPrice.Should().Be(175.00m);
-        stock.Industry.Should().Be(IndustryType.Technology);
+        stock.Sector.Should().Be(SectorType.Technology);
         stock.MarketCap.Should().Be(3000000000000);
     }
 
@@ -252,13 +252,13 @@ public class StockTests
     #region Default Values Tests
 
     [Fact]
-    public void NewStock_ShouldHaveDefaultIndustry()
+    public void NewStock_ShouldHaveDefaultSector()
     {
         // Act
         var stock = new Stock("AAPL", "Apple Inc.", 150.50m);
 
         // Assert
-        stock.Industry.Should().Be(IndustryType.Other);
+        stock.Sector.Should().Be(SectorType.Other);
     }
 
     [Fact]

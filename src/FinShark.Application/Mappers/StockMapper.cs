@@ -24,7 +24,7 @@ public sealed class StockMapper
             Symbol = stock.Symbol,
             CompanyName = stock.CompanyName,
             CurrentPrice = stock.CurrentPrice,
-            Industry = stock.Industry,
+            Sector = stock.Sector,
             MarketCap = stock.MarketCap,
             Comments = CommentMapper.ToDtoList(stock.Comments).ToList()
         };
@@ -52,7 +52,7 @@ public sealed class StockMapper
             currentPrice: createStockRequestDto.CurrentPrice
         )
         {
-            Industry = createStockRequestDto.Industry,
+            Sector = createStockRequestDto.Sector,
             MarketCap = createStockRequestDto.MarketCap
         };
     }
@@ -69,7 +69,7 @@ public sealed class StockMapper
             symbol: createStockRequestDto.Symbol,
             companyName: createStockRequestDto.CompanyName,
             currentPrice: createStockRequestDto.CurrentPrice,
-            industry: createStockRequestDto.Industry,
+            sector: createStockRequestDto.Sector,
             marketCap: createStockRequestDto.MarketCap
         );
     }
@@ -87,7 +87,7 @@ public sealed class StockMapper
             currentPrice: createStockCommand.CurrentPrice
         )
         {
-            Industry = createStockCommand.Industry,
+            Sector = createStockCommand.Sector,
             MarketCap = createStockCommand.MarketCap
         };
     }

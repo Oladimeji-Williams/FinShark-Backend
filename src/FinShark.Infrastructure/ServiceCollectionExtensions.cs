@@ -1,5 +1,6 @@
 using FinShark.Domain.Interfaces;
 using FinShark.Infrastructure.Email;
+using FinShark.Infrastructure.FMP;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -63,6 +64,18 @@ public static class ServiceCollectionExtensions
         {
             services.AddScoped<IEmailService, NoOpEmailService>();
         }
+
+        var fmpSection = configuration.GetSection("FMP");
+        var fmpSettings = new FmpSettings
+        {
+            BaseUrl = fmpSection["BaseUrl"] ?? "https://financialmodelingprep.com",
+            ApiKey = fmpSection["ApiKey"] ?? string.Empty,
+            TimeoutSeconds = int.TryParse(fmpSection["TimeoutSeconds"], out var timeoutSec) ? timeoutSec : 30
+        };
+
+        services.AddSingleton(fmpSettings);
+        services.AddHttpClient();
+        services.AddScoped<IFMPService, FMPService>();
 
         return services;
     }

@@ -125,6 +125,12 @@ namespace FinShark.Persistence.Migrations
                         .HasColumnType("nvarchar(450)")
                         .HasComment("Record creator user id");
 
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasComment("Soft delete flag");
+
                     b.Property<DateTime?>("Modified")
                         .HasColumnType("datetime2")
                         .HasComment("Record last update timestamp");
@@ -189,6 +195,12 @@ namespace FinShark.Persistence.Migrations
                         .HasColumnType("nvarchar(450)")
                         .HasComment("User who added this portfolio item");
 
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasComment("Soft delete flag for portfolio item");
+
                     b.Property<DateTime?>("Modified")
                         .HasColumnType("datetime2")
                         .HasComment("When this stock portfolio item was modified");
@@ -249,11 +261,11 @@ namespace FinShark.Persistence.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasComment("Stock price with 2 decimal places");
 
-                    b.Property<string>("Industry")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasComment("Industry sector");
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasComment("Soft delete flag");
 
                     b.Property<decimal>("LastDiv")
                         .HasColumnType("decimal(18,2)");
@@ -274,6 +286,13 @@ namespace FinShark.Persistence.Migrations
 
                     b.Property<decimal>("Purchase")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Sector")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Sector")
+                        .HasComment("Sector sector");
 
                     b.Property<string>("Symbol")
                         .IsRequired()

@@ -47,8 +47,8 @@ curl -X POST "https://localhost:5001/api/stocks" \
     "symbol": "AAPL",
     "companyName": "Apple Inc.",
     "currentPrice": 250.50,
-    "industry": "Technology",
-    "marketCap": "2500000000000"
+    "sector": "Technology",
+    "marketCap": 2500000000000
   }'
 ```
 
@@ -56,7 +56,9 @@ Expected Response (201 Created):
 ```json
 {
   "success": true,
-  "data": 1,
+  "data": {
+    "id": 1
+  },
   "message": "Stock created successfully"
 }
 ```
@@ -72,18 +74,27 @@ Expected Response (200 OK):
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": 1,
-      "symbol": "AAPL",
-      "companyName": "Apple Inc.",
-      "currentPrice": 250.50,
-      "industry": "Technology",
-      "marketCap": "2500000000000",
-      "createdAt": "2026-03-10T10:30:00Z",
-      "updatedAt": null
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "symbol": "AAPL",
+        "companyName": "Apple Inc.",
+        "currentPrice": 250.50,
+        "sector": "Technology",
+        "marketCap": 2500000000000,
+        "comments": []
+      }
+    ],
+    "pagination": {
+      "totalCount": 1,
+      "pageNumber": 1,
+      "pageSize": 20,
+      "totalPages": 1,
+      "hasNextPage": false,
+      "hasPreviousPage": false
     }
-  ],
+  },
   "message": "Stocks retrieved successfully"
 }
 ```
@@ -104,10 +115,9 @@ Expected Response (200 OK):
     "symbol": "AAPL",
     "companyName": "Apple Inc.",
     "currentPrice": 250.50,
-    "industry": "Technology",
-    "marketCap": "2500000000000",
-    "createdAt": "2026-03-10T10:30:00Z",
-    "updatedAt": null
+    "sector": "Technology",
+    "marketCap": 2500000000000,
+    "comments": []
   },
   "message": "Stock retrieved successfully"
 }
@@ -122,8 +132,8 @@ curl -X PATCH "https://localhost:5001/api/stocks/1" \
     "symbol": "AAPL",
     "companyName": "Apple Inc.",
     "currentPrice": 275.00,
-    "industry": "Technology",
-    "marketCap": "2750000000000"
+    "sector": "Technology",
+    "marketCap": 2750000000000
   }'
 ```
 
@@ -328,8 +338,7 @@ Expected Response (400 Bad Request):
   "success": false,
   "data": null,
   "errors": [
-    "Symbol is required",
-    "Industry is required"
+    "Stock symbol is required."
   ],
   "message": null
 }
@@ -369,8 +378,8 @@ Content-Type: {{contentType}}
   "symbol": "MSFT",
   "companyName": "Microsoft Corporation",
   "currentPrice": 350.25,
-  "industry": "Technology",
-  "marketCap": "2600000000000"
+  "sector": "Technology",
+  "marketCap": 2600000000000
 }
 
 ### Get All Stocks
@@ -389,8 +398,8 @@ Content-Type: {{contentType}}
   "symbol": "MSFT",
   "companyName": "Microsoft Corporation",
   "currentPrice": 380.00,
-  "industry": "Technology",
-  "marketCap": "2800000000000"
+  "sector": "Technology",
+  "marketCap": 2800000000000
 }
 
 ### Delete Stock
@@ -421,7 +430,7 @@ Then use the "REST Client" extension to run these requests directly in VS Code.
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"symbol\": \"AAPL\", \"companyName\": \"Apple Inc.\", \"currentPrice\": 250.50, \"industry\": \"Technology\", \"marketCap\": \"2500000000000\"}"
+          "raw": "{\"symbol\": \"AAPL\", \"companyName\": \"Apple Inc.\", \"currentPrice\": 250.50, \"sector\": \"Technology\", \"marketCap\": 2500000000000}"
         }
       }
     }

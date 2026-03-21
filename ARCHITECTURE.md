@@ -154,6 +154,17 @@ ApiResponse<List<StockDto>>
 HTTP 200 OK Response
 ```
 
+**FMP Query/Handler Separation Example**:
+- `StocksController.GetStockQuoteFromFmp` sends `GetStockQuoteFromFmpQuery` to MediatR.
+- `GetStockQuoteFromFmpQueryHandler` calls `IFMPService` (infrastructure) and maps to `GetStockResponseDto`.
+- Keeps external API service details out of controller and aligns with CQRS.
+
+**Endpoint Integration Test Approach**:
+- Use `WebApplicationFactory` test host.
+- Override `IFMPService` in test DI with a mock implementation.
+- Call `GET /api/stocks/quote/{symbol}` and assert standard `ApiResponse` payload.
+- Verifies controller + mediator + handler path end-to-end while isolating external service.
+
 **Components**:
 
 | Component | Purpose | Example |
