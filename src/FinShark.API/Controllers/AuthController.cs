@@ -19,6 +19,7 @@ namespace FinShark.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/auth")]
+[Route("api/account")]
 public sealed class AuthController(IMediator mediator, IAuthService authService) : ControllerBase
 {
     /// <summary>
@@ -45,6 +46,12 @@ public sealed class AuthController(IMediator mediator, IAuthService authService)
 
         if (!result.Success)
         {
+            var message = result.Message?.ToLowerInvariant() ?? string.Empty;
+            if (message.Contains("user with this email already exists") || message.Contains("username is already taken"))
+            {
+                return Conflict(ApiResponse<AuthResponseDto>.FailureResponse(result.Message ?? "Resource conflict during registration", result.Errors ?? Array.Empty<string>()));
+            }
+
             return BadRequest(ApiResponse<AuthResponseDto>.FailureResponse(
                 result.Message ?? "Registration failed",
                 result.Errors ?? Array.Empty<string>()));
