@@ -1,3 +1,4 @@
+using FinShark.Application.Dtos;
 using FinShark.Application.Stocks.Queries.GetStocks;
 using FluentValidation;
 

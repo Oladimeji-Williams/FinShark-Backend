@@ -1,1208 +1,250 @@
-﻿# FinShark API Endpoints Reference
+# API Endpoints
 
-Complete guide to all available REST API endpoints with request/response examples.
+This document is the canonical HTTP reference for the current implementation.
 
-## Base URL
+## Base URLs
 
-```
-Development: http://localhost:5000 or https://localhost:5001
-Production: https://your-domain.com/api
-```
+Development launch profiles:
 
-## API Versions
+- `http://localhost:5192`
+- `https://localhost:7235`
 
-- **Current Version**: v1
-- **Base Path**: `/api`
+Canonical API prefix:
 
----
+- `/api`
 
-## Authentication Endpoints
+Auth compatibility alias:
 
-### Register User
+- `/api/account`
 
-Creates a new user and sends confirmation email link.
+Preferred auth prefix for new clients:
 
-**Endpoint**: `POST /api/auth/register`
+- `/api/auth`
 
-**Request Headers**:
-```
-Content-Type: application/json
-```
+## Response Envelope
 
-**Request Body** (required fields):
+All endpoints return `ApiResponse<T>`.
+
 ```json
 {
+  "success": true,
+  "data": {},
+  "message": "Human readable message",
+  "fmpStatusCode": null,
+  "suggestion": null,
+  "errors": null
+}
+```
+
+FMP failures may also populate:
+
+- `fmpStatusCode`
+- `suggestion`
+
+## Health
+
+### `GET /api/health`
+
+Returns API health with SMTP configuration warnings.
+
+Notes:
+
+- always JSON
+- currently checks SMTP configuration only
+- does not verify database connectivity or FMP reachability
+
+## Authentication
+
+### `POST /api/auth/register`
+
+Registers a user, assigns the default `User` role, generates a JWT, and attempts to send an email confirmation link.
+
+Request:
+
+```json
+{
+  "email": "trader@example.com",
+  "password": "Password123!",
   "userName": "trader123",
-  "email": "trader@example.com",
-  "password": "P@ssw0rd!"
+  "firstName": "Ada",
+  "lastName": "Lovelace"
 }
 ```
 
-**Response (200 OK)**:
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+- `409 Conflict`
+
+### `POST /api/auth/login`
+
+Logs a user in by email and password.
+
+Important:
+
+- login requires `EmailConfirmed = true`
+- failed login attempts can lock the account out
+
+Responses:
+
+- `200 OK`
+- `401 Unauthorized`
+
+### `POST /api/auth/resend-confirmation`
+
+Creates and attempts to send a new confirmation link.
+
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+
+### `GET /api/auth/confirm-email?userId={userId}&token={token}`
+
+Confirms the user email.
+
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+
+### `GET /api/auth/profile`
+
+Requires authentication.
+
+Returns the current user's full profile.
+
+Responses:
+
+- `200 OK`
+- `401 Unauthorized`
+- `404 Not Found`
+
+### `GET /api/auth/me`
+
+Requires authentication.
+
+Returns the current user's lightweight identity view.
+
+Responses:
+
+- `200 OK`
+- `401 Unauthorized`
+- `404 Not Found`
+
+### `PATCH /api/auth/profile`
+
+Requires authentication.
+
+Updates any combination of:
+
+- `userName`
+- `firstName`
+- `lastName`
+
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+- `401 Unauthorized`
+
+### `POST /api/auth/change-password`
+
+Requires authentication.
+
+Request:
+
 ```json
 {
-  "success": true,
-  "data": {
-    "success": true,
-    "token": "<jwt-token>",
-    "message": "Registration successful. Please confirm your email.",
-    "user": {
-      "id": "<guid>",
-      "userName": "trader123",
-      "email": "trader@example.com",
-      "roles": ["User"],
-      "firstName": null,
-      "lastName": null,
-      "fullName": null,
-      "modified": null
-    },
-    "emailConfirmationUrl": "https://localhost:5001/api/auth/confirm-email?userId=<guid>&token=<token>",
-    "emailSent": false
-  },
-  "message": "User registered successfully",
-  "errors": null
+  "currentPassword": "OldPassword123!",
+  "newPassword": "NewPassword123!"
 }
 ```
 
----
+Responses:
 
-### Login User
+- `200 OK`
+- `400 Bad Request`
+- `401 Unauthorized`
 
-Logs in an existing user by email and password (email must be confirmed).
+### `GET /api/auth/admin/users`
 
-**Endpoint**: `POST /api/auth/login`
+Requires `Admin`.
 
-**Request Headers**:
-```
-Content-Type: application/json
-```
+Responses:
 
-**Request Body** (required fields):
+- `200 OK`
+- `401 Unauthorized`
+- `403 Forbidden`
+
+### `POST /api/auth/admin/assign-role`
+
+Requires `Admin`.
+
+Request:
+
 ```json
 {
-  "email": "trader@example.com",
-  "password": "P@ssw0rd!"
-}
-```
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": {
-    "token": "<jwt-token>",
-    "user": {
-      "id": "<guid>",
-      "userName": "trader123",
-      "email": "trader@example.com",
-      "roles": ["User"],
-      "firstName": null,
-      "lastName": null,
-      "fullName": null,
-      "modified": null
-    }
-  },
-  "message": "Login successful",
-  "errors": null
-}
-```
-
----
-
-## Stock Endpoints
-
-### 1. Create Stock
-
-Creates a new stock record.
-
-**Endpoint**: `POST /api/stocks`
-
-**Authentication**: None (can be added later with JWT)
-
-**Request Headers**:
-```
-Content-Type: application/json
-```
-
-**Request Body**:
-```json
-{
-  "symbol": "AAPL",
-  "companyName": "Apple Inc.",
-  "currentPrice": 250.50,
-  "sector": "Technology",
-  "marketCap": 2500000000000
-}
-```
-
-**Response (201 Created)**:
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1
-  },
-  "message": "Stock created successfully",
-  "errors": null
-}
-```
-
-**Response (400 Bad Request)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": [
-    "Stock symbol is required.",
-    "Company name is required.",
-    "Current price must be greater than zero.",
-    "Market cap must be greater than or equal to 0"
-  ]
-}
-```
-
-**Response (409 Conflict)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["A stock with symbol 'AAPL' already exists"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X POST "https://localhost:5001/api/stocks" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "symbol": "AAPL",
-    "companyName": "Apple Inc.",
-    "currentPrice": 250.50,
-    "sector": "Technology",
-    "marketCap": 2500000000000
-  }'
-```
-
----
-
-### 2. Get All Stocks
-
-Retrieves all stocks with optional filtering, sorting, and pagination.
-
-**Endpoint**: `GET /api/stocks`
-
-**Query Parameters**:
-- `pageNumber` (int, optional): Page number (1-based)
-- `pageSize` (int, optional): Items per page (max: 100)
-- `sector` (string, optional): Filter by sector
-- `symbol` (string, optional): Search by symbol (partial match)
-- `companyName` (string, optional): Search by company name (partial match)
-- `minPrice` (decimal, optional): Minimum current price
-- `maxPrice` (decimal, optional): Maximum current price
-- `minMarketCap` (decimal, optional): Minimum market cap
-- `maxMarketCap` (decimal, optional): Maximum market cap
-- `sortBy` (string, optional): Sort field (`symbol`, `companyName`, `currentPrice`, `marketCap`, `created`)
-- `sortDirection` (string, optional): `asc` or `desc`
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": {
-    "items": [
-      {
-        "id": 1,
-        "symbol": "AAPL",
-        "companyName": "Apple Inc.",
-        "currentPrice": 250.50,
-        "sector": "Technology",
-        "marketCap": 2500000000000,
-        "comments": []
-      },
-      {
-        "id": 2,
-        "symbol": "MSFT",
-        "companyName": "Microsoft Corporation",
-        "currentPrice": 380.25,
-        "sector": "Technology",
-        "marketCap": 2800000000000,
-        "comments": []
-      }
-    ],
-    "pagination": {
-      "totalCount": 2,
-      "pageNumber": 1,
-      "pageSize": 2,
-      "totalPages": 1,
-      "hasNextPage": false,
-      "hasPreviousPage": false
-    }
-  },
-  "message": "Stocks retrieved successfully",
-  "errors": null
-}
-```
-
-**Example cURL**:
-```bash
-# Get all stocks
-curl -X GET "https://localhost:5001/api/stocks" \
-  -H "Content-Type: application/json"
-
-# Get with pagination
-curl -X GET "https://localhost:5001/api/stocks?pageNumber=1&pageSize=20" \
-  -H "Content-Type: application/json"
-
-# Filter by sector
-curl -X GET "https://localhost:5001/api/stocks?sector=Technology" \
-  -H "Content-Type: application/json"
-```
-
----
-
-### 3. Get Stock by ID
-
-Retrieves a specific stock by its ID.
-
-**Endpoint**: `GET /api/stocks/{id}`
-
-**Path Parameters**:
-- `id` (int, required): Stock ID
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "symbol": "AAPL",
-    "companyName": "Apple Inc.",
-    "currentPrice": 250.50,
-    "sector": "Technology",
-    "marketCap": 2500000000000,
-    "comments": []
-  },
-  "message": "Stock retrieved successfully",
-  "errors": null
-}
-```
-
-**Response (404 Not Found)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Stock with ID 999 not found"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X GET "https://localhost:5001/api/stocks/1" \
-  -H "Content-Type: application/json"
-```
-
----
-
-### 4. Update Stock
-
-Updates an existing stock.
-
-**Endpoint**: `PATCH /api/stocks/{id}`
-
-**Path Parameters**:
-- `id` (int, required): Stock ID
-
-**Request Body**:
-```json
-{
-  "symbol": "AAPL",
-  "companyName": "Apple Inc.",
-  "currentPrice": 275.00,
-  "sector": "Technology",
-  "marketCap": 2750000000000
-}
-```
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": true,
-  "message": "Stock updated successfully",
-  "errors": null
-}
-```
-
-**Response (400 Bad Request)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": [
-    "Current Price must be greater than 0",
-    "Market Cap must be greater than 0"
-  ]
-}
-```
-
-**Response (404 Not Found)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Stock with ID 999 not found"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X PATCH "https://localhost:5001/api/stocks/1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "symbol": "AAPL",
-    "companyName": "Apple Inc.",
-    "currentPrice": 275.00,
-    "sector": "Technology",
-    "marketCap": 2750000000000
-  }'
-```
-
----
-
-### 5. Delete Stock
-
-Deletes a stock and all associated records.
-
-**Endpoint**: `DELETE /api/stocks/{id}`
-
-**Path Parameters**:
-- `id` (int, required): Stock ID
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": true,
-  "message": "Stock deleted successfully",
-  "errors": null
-}
-```
-
-**Response (404 Not Found)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Stock with ID 999 not found"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X DELETE "https://localhost:5001/api/stocks/1" \
-  -H "Content-Type: application/json"
-```
-
----
-
-## Comment Endpoints
-
-### 1. Create Comment
-
-Creates a new comment on a stock.
-
-**Endpoint**: `POST /api/stocks/{stockId}/comments`
-
-**Request Headers**:
-```
-Content-Type: application/json
-```
-
-**Request Body**:
-```json
-{
-  "title": "Great Investment",
-  "content": "This stock has strong fundamentals and great growth potential",
-  "rating": 5
-}
-```
-
-**Response (201 Created)**:
-```json
-{
-  "success": true,
-  "data": 1,
-  "message": "Comment created successfully",
-  "errors": null
-}
-```
-
-**Response (400 Bad Request)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": [
-    "Stock ID must be greater than 0",
-    "Title is required and must be 3-200 characters",
-    "Content must be 10-5000 characters",
-    "Rating must be between 1 and 5"
-  ]
-}
-```
-
-**Response (404 Not Found)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Stock with ID 999 not found"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X POST "https://localhost:5001/api/stocks/1/comments" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Great Investment",
-    "content": "This stock has strong fundamentals and great growth potential",
-    "rating": 5
-  }'
-```
-
----
-
-### 2. Get All Comments
-
-Retrieves all comments with optional pagination.
-
-**Endpoint**: `GET /api/comments`
-
-**Query Parameters**:
-- `pageNumber` (int, optional): Page number (1-based)
-- `pageSize` (int, optional): Items per page (max: 100)
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": {
-    "items": [
-      {
-        "id": 1,
-        "stockId": 1,
-        "title": "Great Investment",
-        "content": "This stock has strong fundamentals and great growth potential",
-        "rating": 5,
-        "createdAt": "2026-03-11T14:20:00Z",
-        "updatedAt": null
-      }
-    ],
-    "pagination": {
-      "totalCount": 1,
-      "pageNumber": 1,
-      "pageSize": 1,
-      "totalPages": 1,
-      "hasNextPage": false,
-      "hasPreviousPage": false
-    }
-  },
-  "message": "Comments retrieved successfully",
-  "errors": null
-}
-```
-
-**Example cURL**:
-```bash
-curl -X GET "https://localhost:5001/api/comments" \
-  -H "Content-Type: application/json"
-```
-
----
-
-### 3. Get Comment by ID
-
-Retrieves a specific comment by its ID.
-
-**Endpoint**: `GET /api/comments/{id}`
-
-**Path Parameters**:
-- `id` (int, required): Comment ID
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "stockId": 1,
-    "title": "Great Investment",
-    "content": "This stock has strong fundamentals and great growth potential",
-    "rating": 5,
-    "createdAt": "2026-03-11T14:20:00Z",
-    "updatedAt": null
-  },
-  "message": "Comment retrieved successfully",
-  "errors": null
-}
-```
-
-**Response (404 Not Found)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Comment with ID 999 not found"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X GET "https://localhost:5001/api/comments/1" \
-  -H "Content-Type: application/json"
-```
-
----
-
-### 4. Get Comments by Stock ID
-
-Retrieves all comments for a specific stock.
-
-**Endpoint**: `GET /api/stocks/{stockId}/comments`
-
-**Path Parameters**:
-- `stockId` (int, required): Stock ID
-
-**Query Parameters**:
-- `pageNumber` (int, optional): Page number (1-based)
-- `pageSize` (int, optional): Items per page (max: 100)
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": {
-    "items": [
-      {
-        "id": 1,
-        "stockId": 1,
-        "title": "Great Investment",
-        "content": "This stock has strong fundamentals and great growth potential",
-        "rating": 5,
-        "createdAt": "2026-03-11T14:20:00Z",
-        "updatedAt": null
-      },
-      {
-        "id": 2,
-        "stockId": 1,
-        "title": "Strong Performer",
-        "content": "Consistent returns over the past 5 years",
-        "rating": 4,
-        "createdAt": "2026-03-11T14:25:00Z",
-        "updatedAt": null
-      }
-    ],
-    "pagination": {
-      "totalCount": 2,
-      "pageNumber": 1,
-      "pageSize": 2,
-      "totalPages": 1,
-      "hasNextPage": false,
-      "hasPreviousPage": false
-    }
-  },
-  "message": "Comments retrieved successfully",
-  "errors": null
-}
-```
-
-**Response (404 Not Found)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Stock with ID 999 not found"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X GET "https://localhost:5001/api/stocks/1/comments" \
-  -H "Content-Type: application/json"
-```
-
----
-
-### 5. Update Comment
-
-Updates an existing comment.
-
-**Endpoint**: `PATCH /api/comments/{id}`
-
-**Path Parameters**:
-- `id` (int, required): Comment ID
-
-**Request Body**:
-```json
-{
-  "title": "Excellent Investment",
-  "content": "Updated: This stock continues to show strong fundamentals",
-  "rating": 5
-}
-```
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": true,
-  "message": "Comment updated successfully",
-  "errors": null
-}
-```
-
-**Response (404 Not Found)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Comment with ID 999 not found"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X PATCH "https://localhost:5001/api/comments/1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Excellent Investment",
-    "content": "Updated: This stock continues to show strong fundamentals",
-    "rating": 5
-  }'
-```
-
----
-
-### 6. Delete Comment
-
-Deletes a comment.
-
-**Endpoint**: `DELETE /api/comments/{id}`
-
-**Path Parameters**:
-- `id` (int, required): Comment ID
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": true,
-  "message": "Comment deleted successfully",
-  "errors": null
-}
-```
-
-**Response (404 Not Found)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Comment with ID 999 not found"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X DELETE "https://localhost:5001/api/comments/1" \
-  -H "Content-Type: application/json"
-```
-
----
-
-## Auth Endpoints
-
-### Change Password
-
-`ChangePasswordCommand` and validation exist in the application layer, but there is currently no public HTTP endpoint exposed for password changes in `AuthController`.
-
----
-
-### Email Confirmation Endpoints
-
-#### Resend Confirmation Token
-
-Creates and attempts to send a new email confirmation link for the user. In development, the response may also include an `emailConfirmationUrl`.
-
-**Endpoint**: `POST /api/auth/resend-confirmation`
-
-**Request Body**:
-```json
-{
-  "email": "user@example.com"
-}
-```
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": {
-    "success": true,
-    "token": null,
-    "message": "Email confirmation link sent",
-    "emailConfirmationUrl": "https://localhost:5001/api/auth/confirm-email?userId=<guid>&token=<token>",
-    "emailSent": true
-  },
-  "message": "Email confirmation token created",
-  "errors": null
-}
-```
-
-**Response (400 Bad Request)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["User not found", "Email already confirmed"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X POST "https://localhost:5001/api/auth/resend-confirmation" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com"}'
-```
-
----
-
-#### Confirm Email
-
-Confirms an account using user ID and confirmation token.
-
-**Endpoint**: `GET /api/auth/confirm-email?userId={userId}&token={token}`
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": null,
-  "message": "Email confirmed successfully",
-  "errors": null
-}
-```
-
-**Response (400 Bad Request)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["User not found", "Email confirmation failed"]
-}
-```
-
----
-
-### Admin Role Endpoints
-
-These endpoints require `Admin` role authorization.
-
-#### Get All Users
-
-Retrieves all registered users for admin management.
-
-**Endpoint**: `GET /api/auth/admin/users`
-
-**Request Headers**:
-```
-Authorization: Bearer {jwt}
-```
-
-**Response (200 OK)**:
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "...",
-      "username": "alice",
-      "email": "alice@example.com",
-      "role": "User"
-    }
-  ],
-  "message": "Users retrieved successfully",
-  "errors": null
-}
-```
-
----
-
-## Portfolio Endpoints
-
-### Get Portfolio
-
-Retrieve stocks in the authenticated user portfolio.
-
-**Endpoint**: `GET /api/portfolio`
-
-**Request Headers**:
-```
-Authorization: Bearer {jwt}
-```
-
-**Response 200 OK**:
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "symbol": "AAPL",
-      "companyName": "Apple Inc.",
-      "currentPrice": 250.50,
-      "sector": "Technology",
-      "marketCap": 2500000000000,
-      "comments": []
-    }
-  ],
-  "message": "Portfolio retrieved successfully",
-  "errors": null
-}
-```
-
-**Example cURL**:
-```bash
-curl -X GET "https://localhost:5001/api/portfolio" \
-  -H "Authorization: Bearer {jwt}" \
-  -H "Content-Type: application/json"
-```
-
----
-
-### Add to Portfolio by Stock ID
-
-Add an existing local stock to portfolio.
-
-**Endpoint**: `POST /api/portfolio/{stockId}`
-
-**Path Parameters**:
-- `stockId` (int): ID of existing local stock.
-
-**Response 200 OK**:
-```json
-{
-  "success": true,
-  "data": true,
-  "message": "Stock added to portfolio",
-  "errors": null
-}
-```
-
-**Response 404 Not Found**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Stock with ID {id} not found"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X POST "https://localhost:5001/api/portfolio/1" \
-  -H "Authorization: Bearer {jwt}" \
-  -H "Content-Type: application/json"
-```
-
----
-
-### Add to Portfolio by Symbol (FMP Fallback)
-
-Add a stock to portfolio by symbol. If missing locally, resolves from FMP and stores locally.
-
-**Endpoint**: `POST /api/portfolio/symbol/{symbol}`
-
-**Path Parameters**:
-- `symbol` (string): Stock symbol, e.g. `AAPL`.
-
-**Response 200 OK**:
-```json
-{
-  "success": true,
-  "data": true,
-  "message": "Stock added to portfolio",
-  "errors": null
-}
-```
-
-**Response 404 Not Found**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Stock symbol '{symbol}' not found in FMP."]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X POST "https://localhost:5001/api/portfolio/symbol/AAPL" \
-  -H "Authorization: Bearer {jwt}" \
-  -H "Content-Type: application/json"
-```
-
----
-
-### Remove from Portfolio
-
-Soft remove a stock from portfolio (hard delete optionally via query).
-
-**Endpoint**: `DELETE /api/portfolio/{stockId}`
-
-**Path Parameters**:
-- `stockId` (int): stock id.
-
-**Query**:
-- `hardDelete` (boolean, optional)
-
-**Response 200 OK**:
-```json
-{
-  "success": true,
-  "data": true,
-  "message": "Stock soft removed from portfolio",
-  "errors": null
-}
-```
-
-**Example cURL**:
-```bash
-curl -X DELETE "https://localhost:5001/api/portfolio/1" \
-  -H "Authorization: Bearer {jwt}" \
-  -H "Content-Type: application/json"
-```
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Access denied"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X GET "https://localhost:5001/api/auth/admin/users" \
-  -H "Authorization: Bearer {admin_jwt}"
-```
-
-#### Assign Role to User
-
-Updates a user’s role.
-
-**Endpoint**: `POST /api/auth/admin/assign-role`
-
-**Request Headers**:
-```
-Authorization: Bearer {admin_jwt}
-Content-Type: application/json
-```
-
-**Request Body**:
-```json
-{
-  "userId": "<guid>",
+  "userId": "user-id",
   "role": "Admin"
 }
 ```
 
-**Response (200 OK)**:
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+- `401 Unauthorized`
+- `403 Forbidden`
+
+### `GET /api/auth/smtp-test`
+
+Requires `Admin`.
+
+Purpose:
+
+- smoke-test SMTP delivery path from the API
+
+Responses:
+
+- `200 OK`
+- `401 Unauthorized`
+- `403 Forbidden`
+- `500 Internal Server Error` if the configured SMTP provider throws
+
+## Stocks
+
+### `GET /api/stocks`
+
+Public read endpoint.
+
+Query parameters:
+
+- `symbol`
+- `companyName`
+- `sector`
+- `minPrice`
+- `maxPrice`
+- `minMarketCap`
+- `maxMarketCap`
+- `sortBy`: `symbol`, `companyName`, `currentPrice`, `marketCap`, `created`
+- `sortDirection`: `asc`, `desc`
+- `pageNumber`
+- `pageSize`
+
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+
+### `POST /api/stocks`
+
+Requires authentication.
+
+Request:
+
 ```json
-{
-  "success": true,
-  "data": {
-    "success": true,
-    "token": null,
-    "message": "Role assigned successfully"
-  },
-  "message": "Role assigned successfully",
-  "errors": null
-}
-```
-
-**Response (400 Bad Request)**:
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Role must be either 'User' or 'Admin'"]
-}
-```
-
-**Example cURL**:
-```bash
-curl -X POST "https://localhost:5001/api/auth/admin/assign-role" \
-  -H "Authorization: Bearer {admin_jwt}" \
-  -H "Content-Type: application/json" \
-  -d '{"userId":"<guid>","role":"Admin"}'
-```
-
----
-
-## Response Format
-
-All API responses follow a standardized format:
-
-```typescript
-interface ApiResponse<T> {
-  success: boolean;           // Whether the request was successful
-  data: T | null;             // Response data (null on error)
-  message: string | null;     // User-friendly message
-  errors: string[] | null;    // Array of error messages
-}
-```
-
----
-
-## HTTP Status Codes
-
-| Code | Meaning | Example |
-|------|---------|---------|
-| 200 | OK | Successful GET, PATCH, DELETE |
-| 201 | Created | Successful POST |
-| 400 | Bad Request | Validation errors, malformed data |
-| 404 | Not Found | Resource doesn't exist |
-| 409 | Conflict | Duplicate record, business rule violation |
-| 500 | Internal Server Error | Unhandled exception |
-
----
-
-## Error Responses
-
-### Validation Error (400)
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": [
-    "Symbol is required",
-    "Current Price must be greater than 0"
-  ]
-}
-```
-
-### Not Found Error (404)
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["Stock with ID 999 not found"]
-}
-```
-
-### Business Logic Error (409)
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["A stock with symbol 'AAPL' already exists"]
-}
-```
-
-### Server Error (500)
-```json
-{
-  "success": false,
-  "data": null,
-  "message": null,
-  "errors": ["An unexpected error occurred. Please try again later."]
-}
-```
-
----
-
-## Request Examples by Tool
-
-### PowerShell
-
-```powershell
-# POST - Create stock
-$body = @{
-    symbol = "AAPL"
-    companyName = "Apple Inc."
-    currentPrice = 250.50
-    sector = "Technology"
-    marketCap = 2500000000000
-} | ConvertTo-Json
-
-Invoke-RestMethod -Uri "https://localhost:5001/api/stocks" `
-  -Method POST `
-  -ContentType "application/json" `
-  -Body $body `
-  -SkipCertificateCheck
-
-# GET - All stocks
-Invoke-RestMethod -Uri "https://localhost:5001/api/stocks" `
-  -Method GET `
-  -SkipCertificateCheck
-
-# GET - By ID
-Invoke-RestMethod -Uri "https://localhost:5001/api/stocks/1" `
-  -Method GET `
-  -SkipCertificateCheck
-
-# PATCH - Update
-$updateBody = @{
-    symbol = "AAPL"
-    companyName = "Apple Inc."
-    currentPrice = 275.00
-    sector = "Technology"
-    marketCap = 2750000000000
-} | ConvertTo-Json
-
-Invoke-RestMethod -Uri "https://localhost:5001/api/stocks/1" `
-  -Method PATCH `
-  -ContentType "application/json" `
-  -Body $updateBody `
-  -SkipCertificateCheck
-
-# DELETE
-Invoke-RestMethod -Uri "https://localhost:5001/api/stocks/1" `
-  -Method DELETE `
-  -SkipCertificateCheck
-```
-
-### VS Code REST Client (.http files)
-
-```http
-### Variables
-@baseUrl = https://localhost:5001/api
-@stockId = 1
-
-### Create Stock
-POST {{baseUrl}}/stocks
-Content-Type: application/json
-
 {
   "symbol": "AAPL",
   "companyName": "Apple Inc.",
@@ -1210,94 +252,245 @@ Content-Type: application/json
   "sector": "Technology",
   "marketCap": 2500000000000
 }
+```
 
-### Get All Stocks
-GET {{baseUrl}}/stocks
+Responses:
 
-### Get Stock by ID
-GET {{baseUrl}}/stocks/{{stockId}}
+- `201 Created`
+- `400 Bad Request`
+- `401 Unauthorized`
+- `409 Conflict`
 
-### Update Stock
-PATCH {{baseUrl}}/stocks/{{stockId}}
-Content-Type: application/json
+### `GET /api/stocks/{id}`
 
+Public read endpoint.
+
+Responses:
+
+- `200 OK`
+- `404 Not Found`
+
+### `GET /api/stocks/quote/{symbol}`
+
+Public read endpoint backed by FMP.
+
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+- `404 Not Found`
+
+### `GET /api/stocks/quote/full/{symbol}`
+
+Public read endpoint backed by FMP company profile data.
+
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+- `404 Not Found`
+
+### `PATCH /api/stocks/{id}`
+
+Requires authentication.
+
+Supports partial update with any combination of:
+
+- `symbol`
+- `companyName`
+- `currentPrice`
+- `sector`
+- `marketCap`
+
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+- `401 Unauthorized`
+- `404 Not Found`
+
+### `DELETE /api/stocks/{id}?hardDelete={bool}`
+
+Requires authentication.
+
+Rules:
+
+- soft delete is allowed for authenticated users
+- `hardDelete=true` requires `Admin`
+
+Responses:
+
+- `200 OK`
+- `401 Unauthorized`
+- `403 Forbidden`
+- `404 Not Found`
+
+## Portfolio
+
+All portfolio endpoints require authentication.
+
+### `GET /api/portfolio`
+
+Returns the current user's portfolio stocks.
+
+Responses:
+
+- `200 OK`
+- `401 Unauthorized`
+
+### `POST /api/portfolio/{stockId}`
+
+Adds an existing local stock to the current user's portfolio.
+
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+- `401 Unauthorized`
+
+### `POST /api/portfolio/symbol/{symbol}`
+
+Adds a stock by symbol.
+
+Behavior:
+
+- if the symbol exists locally, it uses the local stock
+- otherwise it queries FMP, stores the stock locally, then adds it to the portfolio
+
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+- `401 Unauthorized`
+- `404 Not Found`
+
+### `DELETE /api/portfolio/{stockId}?hardDelete={bool}`
+
+Removes a portfolio item for the current user.
+
+Rules:
+
+- default behavior is soft delete
+- `hardDelete=true` requires `Admin`
+
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+- `401 Unauthorized`
+- `403 Forbidden`
+
+## Comments
+
+### `GET /api/comments`
+
+Public read endpoint.
+
+Query parameters:
+
+- `pageNumber`
+- `pageSize`
+- `stockId`
+- `stockSymbol`
+- `minRating`
+- `maxRating`
+- `titleContains`
+- `contentContains`
+- `sortBy`: `created`, `rating`, `title`, `symbol`
+- `sortDirection`: `asc`, `desc`
+
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+
+### `GET /api/comments/{id}`
+
+Public read endpoint.
+
+Responses:
+
+- `200 OK`
+- `404 Not Found`
+
+### `GET /api/stocks/{stockId}/comments`
+
+Public read endpoint.
+
+Supports the same comment filtering options, with `stockId` fixed by route.
+
+Responses:
+
+- `200 OK`
+- `400 Bad Request`
+- `404 Not Found`
+
+### `POST /api/stocks/{stockId}/comments`
+
+Requires authentication.
+
+Request:
+
+```json
 {
-  "symbol": "AAPL",
-  "companyName": "Apple Inc.",
-  "currentPrice": 275.00,
-  "sector": "Technology",
-  "marketCap": 2750000000000
+  "title": "Long-term upside",
+  "content": "The balance sheet looks healthy and the valuation still leaves room for growth.",
+  "rating": 5
 }
-
-### Delete Stock
-DELETE {{baseUrl}}/stocks/{{stockId}}
 ```
 
----
+Responses:
 
-## Sector Values
+- `201 Created`
+- `400 Bad Request`
+- `401 Unauthorized`
+- `404 Not Found`
 
-Valid sector values:
+### `PATCH /api/comments/{id}`
 
-```
-Basic Materials
-Communication Services
-Consumer Cyclical
-Consumer Defensive
-Energy
-Entertainment
-Finance
-Financial Services
-Healthcare
-Industrials
-Manufacturing
-Other
-Real Estate
-Retail
-Technology
-Telecommunications
-Transportation
-```
+Requires authentication.
 
----
+Rules:
 
-## Pagination
+- comment owner can update
+- admins can update any comment
 
-For large datasets, use pagination:
+Responses:
 
-```bash
-# Get first page (10 items)
-GET /api/stocks?pageNumber=1&pageSize=10
+- `200 OK`
+- `400 Bad Request`
+- `401 Unauthorized`
+- `403 Forbidden`
+- `404 Not Found`
 
-# Get second page
-GET /api/stocks?pageNumber=2&pageSize=10
+### `DELETE /api/comments/{id}?hardDelete={bool}`
 
-# Change page size
-GET /api/stocks?pageNumber=1&pageSize=50
-```
+Requires authentication.
 
-Pagination metadata is included in `data.pagination` for `GET /api/stocks`, `GET /api/comments`, and `GET /api/stocks/{stockId}/comments`.
+Rules:
 
----
+- comment owner can soft delete their own comment
+- admins can delete any comment
+- `hardDelete=true` requires `Admin`
 
-## Rate Limiting
+Responses:
 
-Currently no rate limiting is implemented. Consider adding in production:
-- 100 requests per minute per IP
-- 1000 requests per hour per API key
+- `200 OK`
+- `401 Unauthorized`
+- `403 Forbidden`
+- `404 Not Found`
 
----
+## Serialization Notes
 
-## API Versioning
+- `SectorType` is serialized as a string value such as `"Technology"`
+- the API also accepts legacy numeric sector codes on input
+- `Rating` is serialized as an integer from `1` to `5`
+- comment timestamps are exposed as `created` and `modified`
 
-Future versions will be accessible via:
-- `GET /api/v2/stocks` (example)
-- Version headers: `Accept: application/vnd.finshark.v2+json`
+## OpenAPI
 
----
+In Development only:
 
-## OpenAPI/Swagger
+- `GET /openapi/v1.json`
 
-Access interactive API documentation:
-- **Swagger UI**: `https://localhost:5001/swagger/index.html`
-- **OpenAPI Schema**: `https://localhost:5001/openapi/v1.json`
+Swagger UI is not currently configured.

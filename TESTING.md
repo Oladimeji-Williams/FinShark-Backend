@@ -1,512 +1,62 @@
-﻿# Testing FinShark API
+# Testing
 
-## 1. Database Setup & Migrations
+FinShark uses xUnit for tests and Moq for mocking.
 
-First, ensure the database is created:
+## Test Project
 
-```powershell
-# Navigate to project root
-cd "c:\Users\OladimejiWilliams\Desktop\Software Engineering\FinShark\finshark-backend"
+- `src/FinShark.Tests`
 
-# Apply migrations (creates database and tables)
-dotnet ef database update -p src/FinShark.Persistence -s src/FinShark.API
-```
+The suite contains both:
 
-Expected output:
-```
-Build started...
-Build succeeded.
-Applying migration '20260310000000_InitialCreate'.
-Done.
-```
+- unit tests
+- integration tests
 
-## 2. Run the Application
+## Run All Tests
 
 ```powershell
-cd src/FinShark.API
-dotnet run
+dotnet test src/FinShark.Tests/FinShark.Tests.csproj
 ```
 
-Expected output:
-```
-Building...
-info: Microsoft.Hosting.Lifetime[14]
-      Now listening on: https://localhost:5001
-info: Microsoft.Hosting.Lifetime[14]
-      Now listening on: http://localhost:5000
-```
-
-## 3. Test Individual Endpoints
-
-### A. Create a Stock (POST)
-
-```bash
-curl -X POST "https://localhost:5001/api/stocks" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "symbol": "AAPL",
-    "companyName": "Apple Inc.",
-    "currentPrice": 250.50,
-    "sector": "Technology",
-    "marketCap": 2500000000000
-  }'
-```
-
-Expected Response (201 Created):
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1
-  },
-  "message": "Stock created successfully"
-}
-```
-
-### B. Get All Stocks (GET)
-
-```bash
-curl -X GET "https://localhost:5001/api/stocks" \
-  -H "Content-Type: application/json"
-```
-
-Expected Response (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "items": [
-      {
-        "id": 1,
-        "symbol": "AAPL",
-        "companyName": "Apple Inc.",
-        "currentPrice": 250.50,
-        "sector": "Technology",
-        "marketCap": 2500000000000,
-        "comments": []
-      }
-    ],
-    "pagination": {
-      "totalCount": 1,
-      "pageNumber": 1,
-      "pageSize": 20,
-      "totalPages": 1,
-      "hasNextPage": false,
-      "hasPreviousPage": false
-    }
-  },
-  "message": "Stocks retrieved successfully"
-}
-```
-
-### C. Get Single Stock by ID (GET)
-
-```bash
-curl -X GET "https://localhost:5001/api/stocks/1" \
-  -H "Content-Type: application/json"
-```
-
-Expected Response (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "symbol": "AAPL",
-    "companyName": "Apple Inc.",
-    "currentPrice": 250.50,
-    "sector": "Technology",
-    "marketCap": 2500000000000,
-    "comments": []
-  },
-  "message": "Stock retrieved successfully"
-}
-```
-
-### D. Update a Stock (PATCH)
-
-```bash
-curl -X PATCH "https://localhost:5001/api/stocks/1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "symbol": "AAPL",
-    "companyName": "Apple Inc.",
-    "currentPrice": 275.00,
-    "sector": "Technology",
-    "marketCap": 2750000000000
-  }'
-```
-
-Expected Response (200 OK):
-```json
-{
-  "success": true,
-  "data": true,
-  "message": "Stock updated successfully"
-}
-```
-
-### E. Delete a Stock (DELETE)
-
-```bash
-curl -X DELETE "https://localhost:5001/api/stocks/1" \
-  -H "Content-Type: application/json"
-```
-
-Expected Response (200 OK):
-```json
-{
-  "success": true,
-  "data": true,
-  "message": "Stock deleted successfully"
-}
-```
-
-## 4A. Test Comment Endpoints
-
-### A. Create a Comment (POST)
-
-```bash
-curl -X POST "https://localhost:5001/api/stocks/1/comments" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Great Investment",
-    "content": "This stock has strong fundamentals and great growth potential over the long term",
-    "rating": 5
-  }'
-```
-
-Expected Response (201 Created):
-```json
-{
-  "success": true,
-  "data": 1,
-  "message": "Comment created successfully"
-}
-```
-
-### B. Get All Comments (GET)
-
-```bash
-curl -X GET "https://localhost:5001/api/comments" \
-  -H "Content-Type: application/json"
-```
-
-Expected Response (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "items": [
-      {
-        "id": 1,
-        "stockId": 1,
-        "title": "Great Investment",
-        "content": "This stock has strong fundamentals and great growth potential over the long term",
-        "rating": 5,
-        "createdAt": "2026-03-11T14:20:00Z",
-        "updatedAt": null
-      }
-    ],
-    "pagination": {
-      "totalCount": 1,
-      "pageNumber": 1,
-      "pageSize": 1,
-      "totalPages": 1,
-      "hasNextPage": false,
-      "hasPreviousPage": false
-    }
-  },
-  "message": "Comments retrieved successfully"
-}
-```
-
-### C. Get Comment by ID (GET)
-
-```bash
-curl -X GET "https://localhost:5001/api/comments/1" \
-  -H "Content-Type: application/json"
-```
-
-Expected Response (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "stockId": 1,
-    "title": "Great Investment",
-    "content": "This stock has strong fundamentals and great growth potential over the long term",
-    "rating": 5,
-    "createdAt": "2026-03-11T14:20:00Z",
-    "updatedAt": null
-  },
-  "message": "Comment retrieved successfully"
-}
-```
-
-### D. Get Comments by Stock (GET)
-
-```bash
-curl -X GET "https://localhost:5001/api/stocks/1/comments" \
-  -H "Content-Type: application/json"
-```
-
-Expected Response (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "items": [
-      {
-        "id": 1,
-        "stockId": 1,
-        "title": "Great Investment",
-        "content": "This stock has strong fundamentals and great growth potential over the long term",
-        "rating": 5,
-        "createdAt": "2026-03-11T14:20:00Z",
-        "updatedAt": null
-      }
-    ],
-    "pagination": {
-      "totalCount": 1,
-      "pageNumber": 1,
-      "pageSize": 1,
-      "totalPages": 1,
-      "hasNextPage": false,
-      "hasPreviousPage": false
-    }
-  },
-  "message": "Comments retrieved successfully"
-}
-```
-
-### E. Update a Comment (PATCH)
-
-```bash
-curl -X PATCH "https://localhost:5001/api/comments/1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Excellent Investment",
-    "content": "Updated: This stock continues to show strong fundamentals and excellent returns",
-    "rating": 5
-  }'
-```
-
-Expected Response (200 OK):
-```json
-{
-  "success": true,
-  "data": true,
-  "message": "Comment updated successfully"
-}
-```
-
-### F. Delete a Comment (DELETE)
-
-```bash
-curl -X DELETE "https://localhost:5001/api/comments/1" \
-  -H "Content-Type: application/json"
-```
-
-Expected Response (200 OK):
-```json
-{
-  "success": true,
-  "data": true,
-  "message": "Comment deleted successfully"
-}
-```
-
-## 4. Test Error Scenarios
-
-### Invalid Request (Missing Required Fields)
-
-```bash
-curl -X POST "https://localhost:5001/api/stocks" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "symbol": "",
-    "companyName": "Apple Inc.",
-    "currentPrice": 250.50
-  }'
-```
-
-Expected Response (400 Bad Request):
-```json
-{
-  "success": false,
-  "data": null,
-  "errors": [
-    "Stock symbol is required."
-  ],
-  "message": null
-}
-```
-
-### Stock Not Found
-
-```bash
-curl -X GET "https://localhost:5001/api/stocks/999" \
-  -H "Content-Type: application/json"
-```
-
-Expected Response (404 Not Found):
-```json
-{
-  "success": false,
-  "data": null,
-  "errors": ["Stock with ID 999 not found."],
-  "message": null
-}
-```
-
-## 5. Test Using Visual Studio Code REST Client
-
-Create a file `test-stocks.http` in the project root:
-
-```http
-### Variables
-@baseUrl = https://localhost:5001
-@contentType = application/json
-
-### Create Stock
-POST {{baseUrl}}/api/stocks
-Content-Type: {{contentType}}
-
-{
-  "symbol": "MSFT",
-  "companyName": "Microsoft Corporation",
-  "currentPrice": 350.25,
-  "sector": "Technology",
-  "marketCap": 2600000000000
-}
-
-### Get All Stocks
-GET {{baseUrl}}/api/stocks
-Content-Type: {{contentType}}
-
-### Get Stock by ID
-GET {{baseUrl}}/api/stocks/1
-Content-Type: {{contentType}}
-
-### Update Stock
-PATCH {{baseUrl}}/api/stocks/1
-Content-Type: {{contentType}}
-
-{
-  "symbol": "MSFT",
-  "companyName": "Microsoft Corporation",
-  "currentPrice": 380.00,
-  "sector": "Technology",
-  "marketCap": 2800000000000
-}
-
-### Delete Stock
-DELETE {{baseUrl}}/api/stocks/1
-Content-Type: {{contentType}}
-```
-
-Then use the "REST Client" extension to run these requests directly in VS Code.
-
-## 6. Test Using Postman
-
-1. Import this collection:
-
-```json
-{
-  "info": {
-    "name": "FinShark API",
-    "description": "Test collection for FinShark Stock API"
-  },
-  "item": [
-    {
-      "name": "Create Stock",
-      "request": {
-        "method": "POST",
-        "url": "https://localhost:5001/api/stocks",
-        "header": [
-          {"key": "Content-Type", "value": "application/json"}
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"symbol\": \"AAPL\", \"companyName\": \"Apple Inc.\", \"currentPrice\": 250.50, \"sector\": \"Technology\", \"marketCap\": 2500000000000}"
-        }
-      }
-    }
-  ]
-}
-```
-
-## 7. Verify Logging Output
-
-When running the application, check console logs for:
-
-✅ **Configuration Loaded:**
-```
-Application environment: Development
-```
-
-✅ **Database Connection:**
-```
-Microsoft.EntityFrameworkCore.Database.Connection Information: Opened connection to database 'FinSharkDb'
-```
-
-✅ **Request Logging:**
-```
-GET /api/stocks - Retrieving all stocks
-Retrieved 3 stocks
-```
-
-## 8. Check Database Directly
-
-Open SQL Server Management Studio or use PowerShell:
+## Run a Filtered Subset
 
 ```powershell
-# Connect to LocalDB
-sqlcmd -S "(localdb)\mssqllocaldb" -d "FinSharkDb"
-
-# List tables
-SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES;
-
-# View Stock data
-SELECT * FROM dbo.Stocks;
+dotnet test src/FinShark.Tests/FinShark.Tests.csproj --filter "AuthApiIntegrationTests"
+dotnet test src/FinShark.Tests/FinShark.Tests.csproj --filter "CreateStockValidatorTests"
 ```
 
-## 9. Test Configuration Separation
+## Test Infrastructure
 
-✅ **CORS Configuration:**
-- Should accept requests from allowed origins
-- Should reject requests from blocked origins
+Integration tests use a custom `WebApplicationFactory<Program>` and force:
 
-✅ **Logging Configuration:**
-- Development: Debug level logs
-- Production: Warning level logs
+```text
+FINSHARK_USE_INMEMORY_DB=true
+```
 
-✅ **Entity Configuration:**
-- Symbol field: max 10 characters (enforced by DB constraint)
-- CurrentPrice: precision 18,2 (decimal values)
-- Audit fields: CreatedAt, UpdatedAt timestamps
+That means integration tests run without a real SQL Server dependency by default.
 
-## Troubleshooting
+## What Is Covered
 
-### SSL Certificate Error
+Current suite coverage includes:
+
+- auth registration and admin flows
+- stock queries and stock creation/update logic
+- comment query validation
+- portfolio by-symbol behavior
+- FMP-backed query behavior
+- mapper behavior
+
+## Local Verification Workflow
+
+Recommended sequence before committing:
+
 ```powershell
-# If https has certificate issues, use http:
-curl -X GET "http://localhost:5000/api/stocks"
+dotnet restore
+dotnet build src/FinShark.API/FinShark.API.csproj
+dotnet test src/FinShark.Tests/FinShark.Tests.csproj
 ```
 
-### Database Not Found
-```powershell
-# Rerun migrations
-dotnet ef database update -p src/FinShark.Persistence -s src/FinShark.API
-```
+## Notes
 
-### Port Already in Use
-```powershell
-# Check what's using port 5001
-netstat -ano | findstr :5001
-
-# Use different port in launchSettings.json
-```
-
+- tests target `.NET 10`
+- integration tests rely on the real application startup path
+- if you change configuration or route behavior, update the relevant integration tests and the documentation

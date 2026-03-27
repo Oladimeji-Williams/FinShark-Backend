@@ -1,5 +1,6 @@
 namespace FinShark.Application.Dtos;
 
+using FinShark.Domain.Queries;
 using FinShark.Domain.ValueObjects;
 
 /// <summary>
@@ -41,6 +42,20 @@ public sealed record GetCommentResponseDto
     /// Timestamp when comment was last modified
     /// </summary>
     public DateTime? Modified { get; init; }
+}
+
+public sealed record CommentQueryRequestDto
+{
+    public int? PageNumber { get; init; }
+    public int? PageSize { get; init; }
+    public int? StockId { get; init; }
+    public string? StockSymbol { get; init; }
+    public int? MinRating { get; init; }
+    public int? MaxRating { get; init; }
+    public string? TitleContains { get; init; }
+    public string? ContentContains { get; init; }
+    public CommentSortBy SortBy { get; init; } = CommentSortBy.Created;
+    public SortDirection SortDirection { get; init; } = SortDirection.Desc;
 }
 
 /// <summary>

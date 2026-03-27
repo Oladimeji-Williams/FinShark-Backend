@@ -30,138 +30,33 @@ public sealed class CommentRepository : ICommentRepository
         return await _context.Comments.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
-    public async Task<IEnumerable<Comment>> GetByStockIdAsync(
-        int stockId,
-        int? pageNumber = null,
-        int? pageSize = null,
-        string? stockSymbol = null,
-        int? minRating = null,
-        int? maxRating = null,
-        string? titleContains = null,
-        string? contentContains = null,
-        CommentSortBy sortBy = CommentSortBy.Created,
-        SortDirection sortDirection = SortDirection.Desc,
-        CancellationToken cancellationToken = default)
-    {
-        _logger.LogInformation("Fetching comments for stock {StockId}. Page: {PageNumber}, PageSize: {PageSize}, StockSymbol: {StockSymbol}, MinRating: {MinRating}, MaxRating: {MaxRating}, TitleContains: {TitleContains}, ContentContains: {ContentContains}, SortBy: {SortBy}, SortDirection: {SortDirection}",
-            stockId, pageNumber, pageSize, stockSymbol, minRating, maxRating, titleContains, contentContains, sortBy, sortDirection);
-
-        var query = _context.Comments
-            .Include(c => c.Stock)
-            .Where(c => c.StockId == stockId);
-
-        if (!string.IsNullOrWhiteSpace(stockSymbol))
-        {
-            var symbol = stockSymbol.Trim();
-            query = query.Where(c => EF.Functions.Like(c.Stock.Symbol, $"%{symbol}%"));
-        }
-
-        if (minRating.HasValue)
-            query = query.Where(c => c.Rating.Value >= minRating.Value);
-
-        if (maxRating.HasValue)
-            query = query.Where(c => c.Rating.Value <= maxRating.Value);
-
-        if (!string.IsNullOrWhiteSpace(titleContains))
-        {
-            var title = titleContains.Trim();
-            query = query.Where(c => EF.Functions.Like(c.Title, $"%{title}%"));
-        }
-
-        if (!string.IsNullOrWhiteSpace(contentContains))
-        {
-            var content = contentContains.Trim();
-            query = query.Where(c => EF.Functions.Like(c.Content, $"%{content}%"));
-        }
-
-        var descending = sortDirection == SortDirection.Desc;
-        query = sortBy switch
-        {
-            CommentSortBy.Rating => descending ? query.OrderByDescending(c => c.Rating.Value) : query.OrderBy(c => c.Rating.Value),
-            CommentSortBy.Title => descending ? query.OrderByDescending(c => c.Title) : query.OrderBy(c => c.Title),
-            CommentSortBy.Symbol => descending ? query.OrderByDescending(c => c.Stock.Symbol) : query.OrderBy(c => c.Stock.Symbol),
-            _ => descending ? query.OrderByDescending(c => EF.Property<DateTime>(c, "Created")) : query.OrderBy(c => EF.Property<DateTime>(c, "Created")),
-        };
-
-        if (pageNumber.HasValue || pageSize.HasValue)
-        {
-            var resolvedPageNumber = Math.Max(1, pageNumber.GetValueOrDefault(1));
-            var resolvedPageSize = Math.Clamp(pageSize.GetValueOrDefault(DefaultPageSize), 1, MaxPageSize);
-            var skip = (resolvedPageNumber - 1) * resolvedPageSize;
-
-            return await query
-                .Skip(skip)
-                .Take(resolvedPageSize)
-                .ToListAsync(cancellationToken);
-        }
-
-        return await query.ToListAsync(cancellationToken);
-    }
-
     public Task<IEnumerable<Comment>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return GetAllAsync(null, null, null, null, null, null, null, null, CommentSortBy.Created, SortDirection.Desc, cancellationToken);
+        return GetAllAsync(new CommentQueryParameters(), cancellationToken);
     }
 
-    public async Task<IEnumerable<Comment>> GetAllAsync(
-        int? pageNumber = null,
-        int? pageSize = null,
-        int? stockId = null,
-        string? stockSymbol = null,
-        int? minRating = null,
-        int? maxRating = null,
-        string? titleContains = null,
-        string? contentContains = null,
-        CommentSortBy sortBy = CommentSortBy.Created,
-        SortDirection sortDirection = SortDirection.Desc,
-        CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Comment>> GetAllAsync(CommentQueryParameters queryParameters, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(queryParameters);
+
         _logger.LogInformation("Fetching all comments. Page: {PageNumber}, PageSize: {PageSize}, StockId: {StockId}, StockSymbol: {StockSymbol}, MinRating: {MinRating}, MaxRating: {MaxRating}, TitleContains: {TitleContains}, ContentContains: {ContentContains}, SortBy: {SortBy}, SortDirection: {SortDirection}",
-            pageNumber, pageSize, stockId, stockSymbol, minRating, maxRating, titleContains, contentContains, sortBy, sortDirection);
+            queryParameters.PageNumber,
+            queryParameters.PageSize,
+            queryParameters.StockId,
+            queryParameters.StockSymbol,
+            queryParameters.MinRating,
+            queryParameters.MaxRating,
+            queryParameters.TitleContains,
+            queryParameters.ContentContains,
+            queryParameters.SortBy,
+            queryParameters.SortDirection);
 
-        var query = _context.Comments
-            .Include(c => c.Stock)
-            .AsQueryable();
+        var query = BuildQuery(queryParameters);
 
-        if (stockId.HasValue)
-            query = query.Where(c => c.StockId == stockId.Value);
-
-        if (!string.IsNullOrWhiteSpace(stockSymbol))
+        if (queryParameters.PageNumber.HasValue || queryParameters.PageSize.HasValue)
         {
-            var symbol = stockSymbol.Trim();
-            query = query.Where(c => EF.Functions.Like(c.Stock.Symbol, $"%{symbol}%"));
-        }
-
-        if (minRating.HasValue)
-            query = query.Where(c => c.Rating.Value >= minRating.Value);
-
-        if (maxRating.HasValue)
-            query = query.Where(c => c.Rating.Value <= maxRating.Value);
-
-        if (!string.IsNullOrWhiteSpace(titleContains))
-        {
-            var title = titleContains.Trim();
-            query = query.Where(c => EF.Functions.Like(c.Title, $"%{title}%"));
-        }
-
-        if (!string.IsNullOrWhiteSpace(contentContains))
-        {
-            var content = contentContains.Trim();
-            query = query.Where(c => EF.Functions.Like(c.Content, $"%{content}%"));
-        }
-
-        var descending = sortDirection == SortDirection.Desc;
-        query = sortBy switch
-        {
-            CommentSortBy.Rating => descending ? query.OrderByDescending(c => c.Rating.Value) : query.OrderBy(c => c.Rating.Value),
-            CommentSortBy.Title => descending ? query.OrderByDescending(c => c.Title) : query.OrderBy(c => c.Title),
-            CommentSortBy.Symbol => descending ? query.OrderByDescending(c => c.Stock.Symbol) : query.OrderBy(c => c.Stock.Symbol),
-            _ => descending ? query.OrderByDescending(c => EF.Property<DateTime>(c, "Created")) : query.OrderBy(c => EF.Property<DateTime>(c, "Created")),
-        };
-        if (pageNumber.HasValue || pageSize.HasValue)
-        {
-            var resolvedPageNumber = Math.Max(1, pageNumber.GetValueOrDefault(1));
-            var resolvedPageSize = Math.Clamp(pageSize.GetValueOrDefault(DefaultPageSize), 1, MaxPageSize);
+            var resolvedPageNumber = Math.Max(1, queryParameters.PageNumber.GetValueOrDefault(1));
+            var resolvedPageSize = Math.Clamp(queryParameters.PageSize.GetValueOrDefault(DefaultPageSize), 1, MaxPageSize);
             var skip = (resolvedPageNumber - 1) * resolvedPageSize;
 
             return await query
@@ -178,10 +73,12 @@ public sealed class CommentRepository : ICommentRepository
         return await _context.Comments.CountAsync(cancellationToken);
     }
 
-    public async Task<int> GetCountByStockIdAsync(int stockId, CancellationToken cancellationToken = default)
+    public async Task<int> GetCountAsync(CommentQueryParameters queryParameters, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Counting comments for stock {StockId}", stockId);
-        return await _context.Comments.CountAsync(c => c.StockId == stockId, cancellationToken);
+        ArgumentNullException.ThrowIfNull(queryParameters);
+
+        _logger.LogInformation("Counting comments for filtered query");
+        return await BuildQuery(queryParameters).CountAsync(cancellationToken);
     }
 
     public async Task AddAsync(Comment comment, CancellationToken cancellationToken = default)
@@ -215,5 +112,55 @@ public sealed class CommentRepository : ICommentRepository
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private IQueryable<Comment> BuildQuery(CommentQueryParameters queryParameters)
+    {
+        var query = _context.Comments
+            .Include(c => c.Stock)
+            .AsQueryable();
+
+        if (queryParameters.StockId.HasValue)
+        {
+            query = query.Where(c => c.StockId == queryParameters.StockId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(queryParameters.StockSymbol))
+        {
+            var symbol = queryParameters.StockSymbol.Trim();
+            query = query.Where(c => EF.Functions.Like(c.Stock.Symbol, $"%{symbol}%"));
+        }
+
+        if (queryParameters.MinRating.HasValue)
+        {
+            query = query.Where(c => c.Rating.Value >= queryParameters.MinRating.Value);
+        }
+
+        if (queryParameters.MaxRating.HasValue)
+        {
+            query = query.Where(c => c.Rating.Value <= queryParameters.MaxRating.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(queryParameters.TitleContains))
+        {
+            var title = queryParameters.TitleContains.Trim();
+            query = query.Where(c => EF.Functions.Like(c.Title, $"%{title}%"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(queryParameters.ContentContains))
+        {
+            var content = queryParameters.ContentContains.Trim();
+            query = query.Where(c => EF.Functions.Like(c.Content, $"%{content}%"));
+        }
+
+        var descending = queryParameters.SortDirection == SortDirection.Desc;
+
+        return queryParameters.SortBy switch
+        {
+            CommentSortBy.Rating => descending ? query.OrderByDescending(c => c.Rating.Value) : query.OrderBy(c => c.Rating.Value),
+            CommentSortBy.Title => descending ? query.OrderByDescending(c => c.Title) : query.OrderBy(c => c.Title),
+            CommentSortBy.Symbol => descending ? query.OrderByDescending(c => c.Stock.Symbol) : query.OrderBy(c => c.Stock.Symbol),
+            _ => descending ? query.OrderByDescending(c => c.Created) : query.OrderBy(c => c.Created),
+        };
     }
 }

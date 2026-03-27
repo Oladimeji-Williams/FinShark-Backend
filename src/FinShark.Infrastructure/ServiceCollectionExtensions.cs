@@ -1,4 +1,4 @@
-using FinShark.Domain.Interfaces;
+using FinShark.Application.Common;
 using FinShark.Infrastructure.Email;
 using FinShark.Infrastructure.FMP;
 using Microsoft.Extensions.Configuration;
@@ -75,7 +75,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton(fmpSettings);
         services.AddHttpClient();
-        services.AddScoped<IFMPService, FMPService>();
+        services.AddScoped<IFmpService, FMPService>();
 
         return services;
     }

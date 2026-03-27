@@ -1,7 +1,7 @@
 using FinShark.Application.Dtos;
 using FinShark.Application.Stocks.Commands.CreateStock;
+using FinShark.Application.Stocks.Commands.UpdateStock;
 using FinShark.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace FinShark.Application.Mappers;
 
@@ -9,7 +9,7 @@ namespace FinShark.Application.Mappers;
 /// Manual mapper for Stock entity to/from DTOs
 /// Maintains explicit control over mapping logic and improves testability
 /// </summary>
-public sealed class StockMapper
+public static class StockMapper
 {
     /// <summary>
     /// Maps Stock entity to GetStockResponseDto (read operation)
@@ -40,7 +40,7 @@ public sealed class StockMapper
     }
 
     /// <summary>
-    /// Maps CreateStockRequestDto to Stock entity
+    /// Maps a stock creation request DTO to a stock entity.
     /// </summary>
     public static Stock ToEntity(CreateStockRequestDto createStockRequestDto)
     {
@@ -49,29 +49,11 @@ public sealed class StockMapper
         return new Stock(
             symbol: createStockRequestDto.Symbol,
             companyName: createStockRequestDto.CompanyName,
-            currentPrice: createStockRequestDto.CurrentPrice
-        )
+            currentPrice: createStockRequestDto.CurrentPrice)
         {
             Sector = createStockRequestDto.Sector,
             MarketCap = createStockRequestDto.MarketCap
         };
-    }
-
-    /// <summary>
-    /// Updates an existing Stock entity from CreateStockRequestDto
-    /// </summary>
-    public static void UpdateEntity(Stock stock, CreateStockRequestDto createStockRequestDto)
-    {
-        ArgumentNullException.ThrowIfNull(stock, nameof(stock));
-        ArgumentNullException.ThrowIfNull(createStockRequestDto, nameof(createStockRequestDto));
-
-        stock.Update(
-            symbol: createStockRequestDto.Symbol,
-            companyName: createStockRequestDto.CompanyName,
-            currentPrice: createStockRequestDto.CurrentPrice,
-            sector: createStockRequestDto.Sector,
-            marketCap: createStockRequestDto.MarketCap
-        );
     }
 
     /// <summary>
@@ -90,5 +72,21 @@ public sealed class StockMapper
             Sector = createStockCommand.Sector,
             MarketCap = createStockCommand.MarketCap
         };
+    }
+
+    /// <summary>
+    /// Updates an existing stock entity from an update command.
+    /// </summary>
+    public static void UpdateEntity(Stock stock, UpdateStockCommand updateStockCommand)
+    {
+        ArgumentNullException.ThrowIfNull(stock, nameof(stock));
+        ArgumentNullException.ThrowIfNull(updateStockCommand, nameof(updateStockCommand));
+
+        stock.Update(
+            symbol: updateStockCommand.Symbol,
+            companyName: updateStockCommand.CompanyName,
+            currentPrice: updateStockCommand.CurrentPrice,
+            sector: updateStockCommand.Sector,
+            marketCap: updateStockCommand.MarketCap);
     }
 }

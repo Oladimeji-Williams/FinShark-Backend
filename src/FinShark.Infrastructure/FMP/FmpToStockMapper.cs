@@ -1,4 +1,3 @@
-using FinShark.Application.Dtos;
 using FinShark.Domain.Entities;
 using FinShark.Domain.ValueObjects;
 
@@ -6,7 +5,7 @@ namespace FinShark.Infrastructure.FMP;
 
 internal static class FmpToStockMapper
 {
-    public static Stock MapToStock(FMPStock source)
+    public static Stock MapToStock(FmpStockApiModel source)
     {
         if (source is null) throw new ArgumentNullException(nameof(source));
         if (string.IsNullOrWhiteSpace(source.Symbol)) throw new ArgumentException("FMP response contains empty symbol.", nameof(source));

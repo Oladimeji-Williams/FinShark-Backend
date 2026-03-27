@@ -1,6 +1,7 @@
 using FinShark.Application.Auth.Commands.UpdateProfile;
 using FinShark.Application.Auth.Services;
 using FinShark.Application.Dtos;
+using FinShark.Application.Mappers;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -17,13 +18,7 @@ public sealed class UpdateProfileCommandHandler(
     {
         try
         {
-            var updateRequest = new UpdateProfileRequestDto(
-                request.UserName,
-                request.FirstName,
-                request.LastName
-            );
-
-            var result = await authService.UpdateProfileAsync(request.UserId, updateRequest);
+            var result = await authService.UpdateProfileAsync(request.UserId, AuthMapper.ToRequest(request));
 
             if (result.Success)
             {

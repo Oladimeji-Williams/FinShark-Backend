@@ -5,7 +5,6 @@ using FinShark.Application.Stocks.Commands.UpdateStock;
 using FinShark.Application.Stocks.Queries.GetStockById;
 using FinShark.Application.Stocks.Queries.GetStockQuoteFromFmp;
 using FinShark.Application.Stocks.Queries.GetStocks;
-using FinShark.Domain.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,10 +16,8 @@ namespace FinShark.API.Controllers;
 /// Handles HTTP requests for stock operations
 /// Implements CQRS pattern through MediatR
 /// </summary>
-[ApiController]
 [Route("api/[controller]")]
-[Produces("application/json")]
-public sealed class StocksController : ControllerBase
+public sealed class StocksController : ApiControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<StocksController> _logger;
@@ -38,16 +35,16 @@ public sealed class StocksController : ControllerBase
     /// </summary>
     /// <returns>List of stocks</returns>
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<GetStockResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<PagedResult<GetStockResponseDto>>>> GetAllStocks(
-        [FromQuery] StockQueryParameters queryParameters,
+        [FromQuery] StockQueryRequestDto queryParameters,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("GET /api/stocks - Retrieving stocks");
 
-        var parameters = queryParameters ?? new StockQueryParameters();
+        var parameters = queryParameters ?? new StockQueryRequestDto();
 
         var result = await _mediator.Send(new GetStocksQuery(parameters), cancellationToken);
         var response = ApiResponse<PagedResult<GetStockResponseDto>>.SuccessResponse(result, "Stocks retrieved successfully");
@@ -60,10 +57,12 @@ public sealed class StocksController : ControllerBase
     /// <param name="request">Stock creation request data</param>
     /// <returns>Created stock with ID</returns>
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<CreateStockResponseDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<CreateStockResponseDto>>> CreateStock(
         [FromBody] CreateStockRequestDto createStockRequestDto,
         CancellationToken cancellationToken)
@@ -91,9 +90,9 @@ public sealed class StocksController : ControllerBase
     /// <param name="id">Stock ID</param>
     /// <returns>Stock details</returns>
     [HttpGet("{id:int:min(1)}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ApiResponse<GetStockResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<GetStockResponseDto>>> GetStockById(
         int id,
         CancellationToken cancellationToken)
@@ -110,10 +109,10 @@ public sealed class StocksController : ControllerBase
     /// </summary>
     /// <param name="symbol">Stock symbol</param>
     [HttpGet("quote/{symbol}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ApiResponse<GetStockResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<GetStockResponseDto>>> GetStockQuoteFromFmp(
         string symbol,
         CancellationToken cancellationToken)
@@ -130,10 +129,10 @@ public sealed class StocksController : ControllerBase
     /// </summary>
     /// <param name="symbol">Stock symbol</param>
     [HttpGet("quote/full/{symbol}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ApiResponse<GetFullStockQuoteResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<GetFullStockQuoteResponseDto>>> GetFullStockQuoteFromFmp(
         string symbol,
         CancellationToken cancellationToken)
@@ -152,10 +151,12 @@ public sealed class StocksController : ControllerBase
     /// <param name="request">Stock update data - only provided fields will be updated</param>
     /// <returns>Success response</returns>
     [HttpPatch("{id:int:min(1)}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<bool>>> UpdateStock(
         int id,
         [FromBody] UpdateStockRequestDto updateStockRequestDto,
@@ -186,10 +187,11 @@ public sealed class StocksController : ControllerBase
     /// <returns>Success response</returns>
     [HttpDelete("{id:int:min(1)}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<bool>>> DeleteStock(
         int id,
         CancellationToken cancellationToken,

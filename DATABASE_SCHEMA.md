@@ -1,537 +1,171 @@
-# FinShark Database Schema Documentation
+# Database Schema
 
-Complete database design, entity relationships, and migrations guide.
+FinShark uses SQL Server through EF Core and ASP.NET Identity.
 
-## Database Overview
+## Main Tables
 
-**Database Name**: FinSharkDb
-**Type**: SQL Server 2019+
-**Schema**: dbo (default)
+### `AspNetUsers`
 
----
+Backed by `ApplicationUser`.
 
-## Entity Relationship Diagram
+Important fields:
 
-```
-┌─────────────────────────────────────┐
-│           Stocks                    │
-├─────────────────────────────────────┤
-│ Id (PK)                             │
-│ Symbol (string, unique)             │
-│ CompanyName (string)                │
-│ CurrentPrice (decimal)              │
-│ Industry (enum)                     │
-│ MarketCap (long)                    │
-│ Created (DateTime)                  │
-│ Modified (DateTime)                 │
-│ 1 ──────────────────< * │
-│                         │
-│                         │ (Comments)
-│                         │
-│                         ▼
-│                      ┌──────────────────────┐
-│                      │      Comments        │
-│                      ├──────────────────────┤
-│                      │ Id (PK)              │
-│                      │ StockId (FK)         │
-│                      │ Title (string)       │
-│                      │ Content (string)     │
-│                      │ Rating (int, 1-5)    │
-│                      │ Created (DateTime)   │
-│                      │ Modified (DateTime)  │
-│                      └──────────────────────┘
-│
-└─────────────────────────────────────┘
-```
+- `Id`
+- `UserName`
+- `NormalizedUserName`
+- `Email`
+- `NormalizedEmail`
+- `EmailConfirmed`
+- `FirstName`
+- `LastName`
+- `Created`
+- `Modified`
 
----
+Important notes:
 
-## Stocks Table
+- normalized email is indexed uniquely
+- role membership is managed through ASP.NET Identity tables
 
-The central table for stock data.
+### `AspNetRoles`
 
-### Schema
+Stores role names such as:
 
-```sql
-CREATE TABLE [dbo].[Stocks] (
-    [Id] INT PRIMARY KEY IDENTITY(1,1),
-    [Symbol] NVARCHAR(10) NOT NULL UNIQUE,
-    [CompanyName] NVARCHAR(100) NOT NULL,
-    [CurrentPrice] DECIMAL(10, 2) NOT NULL,
-    [Industry] INT NOT NULL, -- Enum: 0=Technology, 1=Healthcare, etc.
-    [MarketCap] BIGINT NOT NULL,
-    [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    [UpdatedAt] DATETIME2 NULL,
-    
-    -- Constraints
-    CHECK ([CurrentPrice] > 0),
-    CHECK ([MarketCap] > 0),
-    CHECK (LEN([Symbol]) > 0),
-    CHECK (LEN([CompanyName]) > 0)
-);
+- `User`
+- `Admin`
 
--- Indexes
-CREATE INDEX [IX_Stocks_Symbol] ON [dbo].[Stocks]([Symbol]);
-CREATE INDEX [IX_Stocks_Industry] ON [dbo].[Stocks]([Industry]);
-CREATE INDEX [IX_Stocks_CreatedAt] ON [dbo].[Stocks]([CreatedAt]);
-```
+### `Stocks`
 
-### Column Definitions
+Backed by `Stock`.
 
-| Column | Type | Null | Default | Description |
-|--------|------|------|---------|-------------|
-| Id | int | NO | IDENTITY(1,1) | Primary key, auto-increment |
-| Symbol | nvarchar(10) | NO | - | Stock ticker symbol (unique) |
-| CompanyName | nvarchar(100) | NO | - | Company legal name |
-| CurrentPrice | decimal(10,2) | NO | - | Current stock price |
-| Industry | int | NO | - | Industry classification (enum) |
-| MarketCap | bigint | NO | - | Market capitalization |
-| CreatedAt | datetime2 | NO | GETUTCDATE() | Record creation timestamp |
-| UpdatedAt | datetime2 | YES | NULL | Last modification timestamp |
+Important fields:
 
-### Sample Data
+- `Id`
+- `Symbol`
+- `CompanyName`
+- `CurrentPrice`
+- `Purchase`
+- `LastDiv`
+- `Sector`
+- `MarketCap`
+- `Created`
+- `Modified`
+- `IsDeleted`
+- `CreatedBy` shadow property
+- `ModifiedBy` shadow property
 
-```sql
-SELECT * FROM Stocks;
+Important constraints:
 
--- Output:
--- Id | Symbol | CompanyName | CurrentPrice | Industry | MarketCap | CreatedAt | UpdatedAt
--- 1  | AAPL   | Apple Inc. | 250.50       | 0        | 2500000000000 | 2026-03-10 10:30:00 | NULL
--- 2  | MSFT   | Microsoft  | 380.25       | 0        | 2800000000000 | 2026-03-10 10:35:00 | NULL
--- 3  | JPM    | JP Morgan  | 175.80       | 1        | 350000000000  | 2026-03-10 10:40:00 | NULL
-```
+- unique index on `Symbol`
+- `Symbol` max length 10
+- `CompanyName` max length 255
+- `CurrentPrice` precision `(18,2)`
+- `MarketCap` precision `(18,2)`
 
----
+### `Comments`
 
-## Comments Table
+Backed by `Comment`.
 
-Contains user comments and ratings for stocks.
+Important fields:
 
-### Schema
+- `Id`
+- `UserId`
+- `StockId`
+- `Title`
+- `Content`
+- `Rating`
+- `Created`
+- `Modified`
+- `IsDeleted`
+- `CreatedBy` shadow property
+- `ModifiedBy` shadow property
 
-```sql
-CREATE TABLE [dbo].[Comments] (
-    [Id] INT PRIMARY KEY IDENTITY(1,1),
-    [StockId] INT NOT NULL,
-    [Title] NVARCHAR(200) NOT NULL,
-    [Content] NVARCHAR(MAX) NOT NULL,
-    [Rating] INT NOT NULL,
-    [Created] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    [Modified] DATETIME2 NULL,
-    
-    -- Foreign Key
-    CONSTRAINT [FK_Comments_Stocks] 
-        FOREIGN KEY ([StockId]) 
-        REFERENCES [dbo].[Stocks]([Id]) 
-        ON DELETE CASCADE,
-    
-    -- Constraints
-    CHECK ([Rating] >= 1 AND [Rating] <= 5),
-    CHECK (LEN([Title]) >= 3 AND LEN([Title]) <= 200),
-    CHECK (LEN([Content]) >= 10)
-);
+Important constraints:
 
--- Indexes
-CREATE INDEX [IX_Comments_StockId] ON [dbo].[Comments]([StockId]);
-CREATE INDEX [IX_Comments_Created] ON [dbo].[Comments]([Created]);
-```
+- rating check constraint: `1 <= Rating <= 5`
+- index on `StockId`
+- index on `UserId`
+- index on `Created`
+- `Title` max length 200
 
-### Column Definitions
+### `PortfolioItems`
 
-| Column | Type | Null | Default | Description |
-|--------|------|------|---------|-------------|
-| Id | int | NO | IDENTITY(1,1) | Primary key |
-| StockId | int | NO | - | Foreign key to Stocks |
-| Title | nvarchar(200) | NO | - | Comment title (3-200 chars) |
-| Content | nvarchar(max) | NO | - | Comment content (min 10 chars) |
-| Rating | int | NO | - | Rating (1-5 stars) |
-| Created | datetime2 | NO | GETUTCDATE() | Creation timestamp |
-| Modified | datetime2 | YES | NULL | Last modification timestamp |
+Backed by `PortfolioItem`.
 
-### Sample Data
+Important fields:
 
-```sql
-SELECT * FROM Comments WHERE StockId = 1;
+- `Id`
+- `UserId`
+- `StockId`
+- `Created`
+- `Modified`
+- `IsDeleted`
+- `CreatedBy` shadow property
+- `ModifiedBy` shadow property
 
--- Output:
--- Id | StockId | Title | Content | Rating | Created | Modified
--- 1  | 1       | Great company | Strong fundamentals and consistent growth | 5 | 2026-03-11 14:20:00 | NULL
--- 2  | 1       | Watch this stock | Volatile but promising long-term | 4 | 2026-03-11 14:25:00 | NULL
-```
+Important constraints:
 
----
+- unique composite index on `(UserId, StockId)`
 
-## Industry Enum Values
+## Relationships
 
-Stored as integer in database:
+- one `ApplicationUser` to many `Comments`
+- one `ApplicationUser` to many `PortfolioItems`
+- one `Stock` to many `Comments`
+- one `Stock` to many `PortfolioItems`
 
-```csharp
-public enum Industry
-{
-    Technology = 0,
-    Healthcare = 1,
-    Finance = 2,
-    Energy = 3,
-    Consumer = 4,
-    Industrial = 5,
-    Telecommunications = 6,
-    Utilities = 7,
-    RealEstate = 8,
-    Materials = 9,
-    Transportation = 10,
-    Retail = 11
-}
-```
+Delete behavior:
 
-**Database Lookup**:
-```sql
--- Get stocks by industry
-SELECT * FROM Stocks WHERE Industry = 0; -- Technology stocks
-SELECT * FROM Stocks WHERE Industry = 1; -- Healthcare stocks
-SELECT * FROM Stocks WHERE Industry = 2; -- Finance stocks
-```
+- comment relationships cascade at the database mapping level
+- portfolio relationships cascade at the database mapping level
+- soft delete filters still hide business rows from normal reads
 
----
+## Audit Model
 
-## Entity Framework Core Configuration
+Business entities derived from `BaseEntity` use:
 
-### Stock Entity Configuration
+- CLR properties: `Created`, `Modified`, `IsDeleted`
+- shadow properties: `CreatedBy`, `ModifiedBy`
 
-```csharp
-// FinShark.Persistence/EntityConfigurations/StockEntityConfiguration.cs
-public sealed class StockEntityConfiguration : IEntityTypeConfiguration<Stock>
-{
-    public void Configure(EntityTypeBuilder<Stock> builder)
-    {
-        // Table name
-        builder.ToTable("Stocks");
+Population behavior:
 
-        // Primary key
-        builder.HasKey(s => s.Id);
+- `AuditSaveChangesInterceptor` stamps `Created` and `CreatedBy` on insert
+- `AuditSaveChangesInterceptor` stamps `Modified` and `ModifiedBy` on update
 
-        // Properties
-        builder.Property(s => s.Id)
-            .ValueGeneratedOnAdd();
+## Soft Delete Behavior
 
-        builder.Property(s => s.Symbol)
-            .HasMaxLength(10)
-            .IsRequired();
+Soft delete applies to:
 
-        builder.Property(s => s.CompanyName)
-            .HasMaxLength(100)
-            .IsRequired();
+- `Stocks`
+- `Comments`
+- `PortfolioItems`
 
-        builder.Property(s => s.CurrentPrice)
-            .HasPrecision(10, 2)
-            .IsRequired();
+Global query filters hide rows where `IsDeleted = true`.
 
-        builder.Property(s => s.Industry)
-            .HasConversion<int>()
-            .IsRequired();
-
-        builder.Property(s => s.MarketCap)
-            .IsRequired();
-
-        builder.Property(s => s.CreatedAt)
-            .HasDefaultValueSql("GETUTCDATE()")
-            .IsRequired();
-
-        builder.Property(s => s.UpdatedAt)
-            .IsRequired(false);
-
-        // Indexes
-        builder.HasIndex(s => s.Symbol).IsUnique();
-        builder.HasIndex(s => s.Industry);
-        builder.HasIndex(s => s.CreatedAt);
-
-        // Relationships
-        builder.HasMany(s => s.Comments)
-            .WithOne(c => c.Stock)
-            .HasForeignKey(c => c.StockId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Check constraints
-        builder.HasCheckConstraint("CK_Stocks_Price", "[CurrentPrice] > 0");
-        builder.HasCheckConstraint("CK_Stocks_MarketCap", "[MarketCap] > 0");
-    }
-}
-```
-
-### Comment Entity Configuration
-
-```csharp
-public static class CommentEntityConfiguration
-{
-    public static void ConfigureComment(this ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<Comment>(entity =>
-        {
-            // Primary Key
-            entity.HasKey(e => e.Id);
-
-            // Properties
-            entity.Property(e => e.StockId)
-                .IsRequired();
-
-            entity.Property(e => e.Title)
-                .IsRequired()
-                .HasMaxLength(200);
-
-            entity.Property(e => e.Content)
-                .IsRequired()
-                .HasColumnType("nvarchar(max)");
-
-            entity.Property(e => e.Rating)
-                .IsRequired();
-
-            entity.Property(e => e.Created)
-                .HasDefaultValueSql("GETUTCDATE()")
-                .IsRequired();
-
-            entity.Property(e => e.Modified)
-                .IsRequired(false);
-
-            // Foreign Key Relationship
-            entity.HasOne<Stock>()
-                .WithMany(s => s.Comments)
-                .HasForeignKey(e => e.StockId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("FK_Comments_Stocks");
-
-            // Indexes
-            entity.HasIndex(e => e.StockId)
-                .HasDatabaseName("IX_Comment_StockId");
-
-            entity.HasIndex(e => e.Created)
-                .HasDatabaseName("IX_Comment_Created");
-
-            // Check constraints
-            entity.HasCheckConstraint("CK_Comment_Rating", "[Rating] >= 1 AND [Rating] <= 5");
-            entity.HasCheckConstraint("CK_Comment_Title", "LEN([Title]) >= 3 AND LEN([Title]) <= 200");
-            entity.HasCheckConstraint("CK_Comment_Content", "LEN([Content]) >= 10");
-        });
-    }
-}
-```
-
----
+Repository implementations can bypass query filters when required for administrative or restore-style operations.
 
 ## Migrations
 
-### Creating Migrations
+Migrations live in:
+
+- `src/FinShark.Persistence/Migrations`
+
+Apply them with:
 
 ```powershell
-# Create a new migration
-cd src/FinShark.Persistence
-dotnet ef migrations add InitialCreate -o Migrations
-
-# Apply migrations
-cd ../FinShark.API
-dotnet ef database update
+dotnet ef database update --project src/FinShark.Persistence --startup-project src/FinShark.API
 ```
 
-### Migration Files
+## Seed Data
 
-```
-FinShark.Persistence/Migrations/
-├── 20260310000000_InitialCreate.cs
-├── 20260310000000_InitialCreate.Designer.cs
-└── AppDbContextModelSnapshot.cs
-```
+The seed flow creates:
 
-### Example Migration
+- default roles: `Admin`, `User`
+- a default seed user
+- sample stock rows
+- sample comment rows
 
-```csharp
-public partial class InitialCreate : Migration
-{
-    protected override void Up(MigrationBuilder migrationBuilder)
-    {
-        migrationBuilder.CreateTable(
-            name: "Stocks",
-            columns: table => new
-            {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                Symbol = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
-                CompanyName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                CurrentPrice = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
-                Industry = table.Column<int>(type: "int", nullable: false),
-                MarketCap = table.Column<long>(type: "bigint", nullable: false),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-            },
-            constraints: table =>
-            {
-                table.PrimaryKey("PK_Stocks", x => x.Id);
-                table.UniqueConstraint("AK_Stocks_Symbol", x => x.Symbol);
-                table.CheckConstraint("CK_Stocks_Price", "[CurrentPrice] > 0");
-                table.CheckConstraint("CK_Stocks_MarketCap", "[MarketCap] > 0");
-            });
-
-        migrationBuilder.CreateIndex(
-            name: "IX_Stocks_Industry",
-            table: "Stocks",
-            column: "Industry");
-
-        migrationBuilder.CreateIndex(
-            name: "IX_Stocks_CreatedAt",
-            table: "Stocks",
-            column: "CreatedAt");
-    }
-
-    protected override void Down(MigrationBuilder migrationBuilder)
-    {
-        migrationBuilder.DropTable(name: "Stocks");
-    }
-}
-```
-
----
-
-## Query Examples
-
-### Insert Stock
-
-```sql
-INSERT INTO Stocks (Symbol, CompanyName, CurrentPrice, Industry, MarketCap)
-VALUES ('AAPL', 'Apple Inc.', 250.50, 0, 2500000000000);
-```
-
-### Get All Stocks with Comments
-
-```sql
-SELECT 
-    s.Id,
-    s.Symbol,
-    s.CompanyName,
-    s.CurrentPrice,
-    s.Industry,
-    s.MarketCap,
-    COUNT(c.Id) as CommentCount,
-    AVG(CAST(c.Rating as float)) as AverageRating
-FROM Stocks s
-LEFT JOIN Comments c ON s.Id = c.StockId
-GROUP BY s.Id, s.Symbol, s.CompanyName, s.CurrentPrice, s.Industry, s.MarketCap;
-```
-
-### Get Stocks by Industry
-
-```sql
-SELECT * FROM Stocks 
-WHERE Industry = 0  -- Technology
-ORDER BY MarketCap DESC;
-```
-
-### Get Recent Comments
-
-```sql
-SELECT TOP 10
-    c.Id,
-    c.StockId,
-    c.Text,
-    c.Rating,
-    s.Symbol,
-    c.CreatedAt
-FROM Comments c
-INNER JOIN Stocks s ON c.StockId = s.Id
-ORDER BY c.CreatedAt DESC;
-```
-
-### Delete Stock and Comments
-
-```sql
--- Cascade delete happens automatically
-DELETE FROM Stocks WHERE Id = 1;
--- All comments for stock 1 are deleted automatically
-```
-
----
-
-## Performance Considerations
-
-### Indexes
-
-```sql
--- Already created indexes
-CREATE INDEX IX_Stocks_Symbol ON Stocks(Symbol);
-CREATE INDEX IX_Stocks_Industry ON Stocks(Industry);
-CREATE INDEX IX_Stocks_CreatedAt ON Stocks(CreatedAt);
-CREATE INDEX IX_Comments_StockId ON Comments(StockId);
-CREATE INDEX IX_Comments_CreatedAt ON Comments(CreatedAt);
-```
-
-### Query Optimization
-
-```csharp
-// Use .Include() for eager loading
-var stocks = await dbContext.Stocks
-    .Include(s => s.Comments)
-    .Where(s => s.Industry == Industry.Technology)
-    .OrderByDescending(s => s.MarketCap)
-    .Take(10)
-    .ToListAsync();
-
-// Use .AsNoTracking() for read-only queries
-var stocks = await dbContext.Stocks
-    .AsNoTracking()
-    .ToListAsync();
-```
-
----
-
-## Backup & Recovery
-
-### Backup
+Run:
 
 ```powershell
-# Full backup
-sqlcmd -S localhost -E -Q "BACKUP DATABASE FinSharkDb TO DISK = 'C:\Backups\FinSharkDb.bak';"
-
-# Transaction log backup
-sqlcmd -S localhost -E -Q "BACKUP LOG FinSharkDb TO DISK = 'C:\Backups\FinSharkDb.trn';"
-```
-
-### Restore
-
-```powershell
-# Restore from backup
-sqlcmd -S localhost -E << EOF
-RESTORE DATABASE FinSharkDb FROM DISK = 'C:\Backups\FinSharkDb.bak'
-WITH REPLACE;
-GO
-EOF
-```
-
----
-
-## Database Maintenance
-
-```sql
--- Update statistics
-EXEC sp_updatestats;
-
--- Rebuild fragmented indexes
-ALTER INDEX IX_Stocks_Industry ON Stocks REBUILD;
-
--- Check database integrity
-DBCC CHECKDB (FinSharkDb);
-```
-
----
-
-## Connection Strings
-
-### Development
-```
-Server=(local);Database=FinSharkDb_Dev;Trusted_Connection=true;TrustServerCertificate=true;
-```
-
-### Staging
-```
-Server=staging-db.company.local;Database=FinSharkDb_Staging;User Id=sa;Password=***;TrustServerCertificate=true;
-```
-
-### Production
-```
-Server=prod-db.company.local;Database=FinSharkDb_Prod;User Id=prod_user;Password=***;Encrypt=true;TrustServerCertificate=false;
+dotnet run --project src/FinShark.API/FinShark.API.csproj -- --seed
 ```

@@ -8,6 +8,8 @@ namespace FinShark.Application.Comments.Commands.UpdateComment;
 /// </summary>
 public sealed record UpdateCommentCommand(
     int Id,
+    string RequestingUserId,
+    bool IsAdmin,
     string? Title,
     string? Content,
     Rating? Rating

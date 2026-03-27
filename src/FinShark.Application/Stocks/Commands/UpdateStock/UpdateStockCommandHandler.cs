@@ -1,6 +1,7 @@
 using MediatR;
 using FinShark.Domain.Repositories;
 using FinShark.Domain.Exceptions;
+using FinShark.Application.Mappers;
 using Microsoft.Extensions.Logging;
 
 namespace FinShark.Application.Stocks.Commands.UpdateStock;
@@ -39,12 +40,7 @@ public sealed class UpdateStockCommandHandler : IRequestHandler<UpdateStockComma
 
         try
         {
-            // Update entity directly from command (supports partial updates)
-            existingStock.Update(
-                symbol: request.Symbol,
-                companyName: request.CompanyName,
-                currentPrice: request.CurrentPrice,
-                sector: request.Sector);
+            StockMapper.UpdateEntity(existingStock, request);
 
             await _stockRepository.UpdateAsync(existingStock, cancellationToken);
 

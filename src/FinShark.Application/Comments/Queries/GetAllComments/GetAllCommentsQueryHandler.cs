@@ -1,7 +1,7 @@
 using MediatR;
 using FinShark.Application.Dtos;
-using FinShark.Application.Mappers;
 using FinShark.Application.Common;
+using FinShark.Application.Mappers;
 using FinShark.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -22,26 +22,16 @@ public sealed class GetAllCommentsQueryHandler : IRequestHandler<GetAllCommentsQ
     public async Task<PagedResult<GetCommentResponseDto>> Handle(GetAllCommentsQuery request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Getting all comments. Page: {PageNumber}, PageSize: {PageSize}",
-            request.PageNumber, request.PageSize);
+            request.QueryParameters.PageNumber, request.QueryParameters.PageSize);
 
-        var comments = await _commentRepository.GetAllAsync(
-            request.PageNumber,
-            request.PageSize,
-            request.StockId,
-            request.StockSymbol,
-            request.MinRating,
-            request.MaxRating,
-            request.TitleContains,
-            request.ContentContains,
-            request.SortBy,
-            request.SortDirection,
-            cancellationToken);
+        var queryParameters = CommentQueryParametersMapper.ToDomain(request.QueryParameters);
+        var comments = await _commentRepository.GetAllAsync(queryParameters, cancellationToken);
         var commentDtos = CommentMapper.ToDtoList(comments).ToList();
-        var isPaged = request.PageNumber.HasValue || request.PageSize.HasValue;
+        var isPaged = request.QueryParameters.PageNumber.HasValue || request.QueryParameters.PageSize.HasValue;
         var totalCount = isPaged
-            ? await _commentRepository.GetCountAsync(cancellationToken)
+            ? await _commentRepository.GetCountAsync(queryParameters, cancellationToken)
             : commentDtos.Count;
-        var pagination = PaginationHelper.Build(totalCount, request.PageNumber, request.PageSize);
+        var pagination = PaginationHelper.Build(totalCount, request.QueryParameters.PageNumber, request.QueryParameters.PageSize);
 
         _logger.LogInformation("Retrieved {CommentCount} comments", commentDtos.Count);
 

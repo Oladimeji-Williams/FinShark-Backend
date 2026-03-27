@@ -1,4 +1,5 @@
 using FluentAssertions;
+using FinShark.Application.Dtos;
 using FinShark.Application.Stocks.Queries.GetStocks;
 using FinShark.Application.Stocks.Validators;
 using FinShark.Domain.Queries;
@@ -14,7 +15,7 @@ public class GetStocksQueryValidatorTests
     public async Task ValidateAsync_WithValidParameters_ShouldPass()
     {
         // Arrange
-        var query = new GetStocksQuery(new StockQueryParameters
+        var query = new GetStocksQuery(new StockQueryRequestDto
         {
             PageNumber = 1,
             PageSize = 20,
@@ -33,7 +34,7 @@ public class GetStocksQueryValidatorTests
     public async Task ValidateAsync_WithInvalidPageSize_ShouldFail()
     {
         // Arrange
-        var query = new GetStocksQuery(new StockQueryParameters
+        var query = new GetStocksQuery(new StockQueryRequestDto
         {
             PageNumber = 1,
             PageSize = 101
@@ -51,7 +52,7 @@ public class GetStocksQueryValidatorTests
     public async Task ValidateAsync_WithMinPriceGreaterThanMaxPrice_ShouldFail()
     {
         // Arrange
-        var query = new GetStocksQuery(new StockQueryParameters
+        var query = new GetStocksQuery(new StockQueryRequestDto
         {
             MinPrice = 200,
             MaxPrice = 100
@@ -68,7 +69,7 @@ public class GetStocksQueryValidatorTests
     public async Task ValidateAsync_WithInvalidSortDirection_ShouldFail()
     {
         // Arrange
-        var query = new GetStocksQuery(new StockQueryParameters
+        var query = new GetStocksQuery(new StockQueryRequestDto
         {
             SortDirection = (SortDirection)99
         });

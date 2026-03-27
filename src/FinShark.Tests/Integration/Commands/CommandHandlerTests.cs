@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using FinShark.Application.Dtos;
 using FinShark.Application.Stocks.Commands.CreateStock;
 using FinShark.Application.Stocks.Queries.GetStocks;
 using FinShark.Application.Mappers;
@@ -145,7 +146,7 @@ public class GetStocksQueryHandlerTests : IAsyncLifetime
     public async Task Handle_ShouldReturnAllStocks()
     {
         // Arrange
-        var query = new GetStocksQuery(new StockQueryParameters());
+        var query = new GetStocksQuery(new StockQueryRequestDto());
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -165,7 +166,7 @@ public class GetStocksQueryHandlerTests : IAsyncLifetime
     public async Task Handle_ShouldMaptoDtosCorrectly()
     {
         // Arrange
-        var query = new GetStocksQuery(new StockQueryParameters());
+        var query = new GetStocksQuery(new StockQueryRequestDto());
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -184,7 +185,7 @@ public class GetStocksQueryHandlerTests : IAsyncLifetime
     public async Task Handle_WithSectorFilter_ShouldReturnOnlyMatching()
     {
         // Arrange
-        var parameters = new StockQueryParameters
+        var parameters = new StockQueryRequestDto
         {
             Sector = SectorType.Technology
         };
@@ -203,7 +204,7 @@ public class GetStocksQueryHandlerTests : IAsyncLifetime
     public async Task Handle_WithSortingAndPagination_ShouldReturnExpectedPage()
     {
         // Arrange
-        var parameters = new StockQueryParameters
+        var parameters = new StockQueryRequestDto
         {
             SortBy = StockSortBy.CurrentPrice,
             SortDirection = SortDirection.Desc,

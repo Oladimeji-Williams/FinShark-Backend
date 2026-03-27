@@ -66,6 +66,16 @@ public sealed record ResendEmailConfirmationRequestDto(
     string Email
 );
 
+public sealed record CurrentUserIdentityDto(
+    string UserId,
+    string UserName,
+    string Email,
+    IEnumerable<string> Roles,
+    string? FirstName = null,
+    string? LastName = null,
+    string? FullName = null
+);
+
 public sealed record UserDto(
     string Id,
     string UserName,

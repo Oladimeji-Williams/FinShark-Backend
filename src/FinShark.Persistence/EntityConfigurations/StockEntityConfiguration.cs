@@ -52,11 +52,11 @@ public static class StockEntityConfiguration
                 .HasComment("Market capitalization");
 
             // Audit shadow columns
-            entity.Property<DateTime>("Created")
+            entity.Property(e => e.Created)
                 .HasDefaultValueSql("GETUTCDATE()")
                 .HasComment("Record creation timestamp");
 
-            entity.Property<DateTime?>("Modified")
+            entity.Property(e => e.Modified)
                 .HasComment("Record last update timestamp");
 
             entity.Property<string>("CreatedBy")

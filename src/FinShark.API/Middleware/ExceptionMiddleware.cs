@@ -59,10 +59,20 @@ public sealed class ExceptionMiddleware
             _logger.LogWarning(fmpEx, "FMP service exception occurred");
             await HandleFmpServiceExceptionAsync(context, fmpEx);
         }
+        catch (ForbiddenOperationException foex)
+        {
+            _logger.LogWarning(foex, "Forbidden operation attempted");
+            await HandleForbiddenExceptionAsync(context, foex);
+        }
         catch (FinSharkException fex)
         {
             _logger.LogWarning(fex, "Domain exception occurred");
             await HandleDomainExceptionAsync(context, fex);
+        }
+        catch (UnauthorizedAccessException uaex)
+        {
+            _logger.LogWarning(uaex, "Unauthorized operation attempted");
+            await HandleForbiddenExceptionAsync(context, uaex);
         }
         catch (KeyNotFoundException knfex)
         {
@@ -121,6 +131,16 @@ public sealed class ExceptionMiddleware
             exception.Message,
             exception.FmpStatusCode,
             exception.Suggestion);
+
+        return WriteJsonAsync(context, response);
+    }
+
+    private static Task HandleForbiddenExceptionAsync(HttpContext context, Exception exception)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+
+        var response = ApiResponse<object>.FailureResponse(exception.Message);
 
         return WriteJsonAsync(context, response);
     }
