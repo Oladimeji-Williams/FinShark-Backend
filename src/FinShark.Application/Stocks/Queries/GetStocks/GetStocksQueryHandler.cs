@@ -1,7 +1,6 @@
 using FinShark.Application.Dtos;
-using FinShark.Application.Mappers;
 using FinShark.Application.Common;
-using FinShark.Domain.Queries;
+using FinShark.Application.Mappers;
 using FinShark.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -37,11 +36,12 @@ public sealed class GetStocksQueryHandler : IRequestHandler<GetStocksQuery, Page
 
         try
         {
-            var stocks = await _stockRepository.GetAllWithCommentsAsync(request.QueryParameters, cancellationToken);
+            var queryParameters = StockQueryParametersMapper.ToDomain(request.QueryParameters);
+            var stocks = await _stockRepository.GetAllWithCommentsAsync(queryParameters, cancellationToken);
             var stockDtos = StockMapper.ToDtoList(stocks).ToList();
             var isPaged = request.QueryParameters.PageNumber.HasValue || request.QueryParameters.PageSize.HasValue;
             var totalCount = isPaged
-                ? await _stockRepository.GetCountAsync(request.QueryParameters, cancellationToken)
+                ? await _stockRepository.GetCountAsync(queryParameters, cancellationToken)
                 : stockDtos.Count;
             var pagination = PaginationHelper.Build(
                 totalCount,

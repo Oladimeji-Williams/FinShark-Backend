@@ -1,6 +1,7 @@
 using FinShark.Application.Auth.Commands.Login;
 using FinShark.Application.Auth.Services;
 using FinShark.Application.Dtos;
+using FinShark.Application.Mappers;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -17,9 +18,7 @@ public sealed class LoginCommandHandler(
     {
         try
         {
-            var loginRequest = new LoginRequestDto(request.Email, request.Password);
-
-            var result = await authService.LoginAsync(loginRequest);
+            var result = await authService.LoginAsync(AuthMapper.ToRequest(request));
 
             if (result.Success)
             {

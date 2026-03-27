@@ -27,6 +27,11 @@ public sealed class DeleteCommentCommandHandler : IRequestHandler<DeleteCommentC
         if (comment == null)
             throw new CommentNotFoundException($"Comment with ID {request.Id} not found");
 
+        if (!request.IsAdmin && !string.Equals(comment.UserId, request.RequestingUserId, StringComparison.Ordinal))
+        {
+            throw new ForbiddenOperationException("You are not allowed to delete this comment.");
+        }
+
         if (request.HardDelete)
         {
             _logger.LogInformation("Hard deleting comment {CommentId}", request.Id);

@@ -1,7 +1,7 @@
 using FinShark.Application.Dtos;
+using FinShark.Application.Common;
 using FinShark.Application.Mappers;
 using FinShark.Domain.Exceptions;
-using FinShark.Domain.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -9,15 +9,15 @@ namespace FinShark.Application.Stocks.Queries.GetStockQuoteFromFmp;
 
 /// <summary>
 /// Handler for GetStockQuoteFromFmpQuery.
-/// Uses IFMPService to resolve stock data from Financial Modeling Prep.
+/// Uses IFmpService to resolve stock data from Financial Modeling Prep.
 /// </summary>
 public sealed class GetStockQuoteFromFmpQueryHandler : IRequestHandler<GetStockQuoteFromFmpQuery, GetStockResponseDto>
 {
-    private readonly IFMPService _fmpService;
+    private readonly IFmpService _fmpService;
     private readonly ILogger<GetStockQuoteFromFmpQueryHandler> _logger;
 
     public GetStockQuoteFromFmpQueryHandler(
-        IFMPService fmpService,
+        IFmpService fmpService,
         ILogger<GetStockQuoteFromFmpQueryHandler> logger)
     {
         _fmpService = fmpService ?? throw new ArgumentNullException(nameof(fmpService));

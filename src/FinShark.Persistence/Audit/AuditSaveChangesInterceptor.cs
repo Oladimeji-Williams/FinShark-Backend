@@ -5,14 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinShark.Persistence.Audit;
 
-public sealed class AuditSaveChangesInterceptor : SaveChangesInterceptor
+public sealed class AuditSaveChangesInterceptor(ICurrentUserService? currentUserService) : SaveChangesInterceptor
 {
-    private readonly ICurrentUserService? _currentUserService;
-
-    public AuditSaveChangesInterceptor(ICurrentUserService? currentUserService)
-    {
-        _currentUserService = currentUserService;
-    }
+    private readonly ICurrentUserService? _currentUserService = currentUserService;
 
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
     {

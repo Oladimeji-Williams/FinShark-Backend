@@ -93,7 +93,7 @@ public static class ServiceCollectionExtensions
 
         // Register repositories
         services.AddScoped<IStockRepository, StockRepository>();
-        services.AddScoped<IPortfolioRepository, StockRepository>();
+        services.AddScoped<IPortfolioRepository, PortfolioRepository>();
         services.AddScoped<ICommentRepository, CommentRepository>();
 
         // Register auth service

@@ -35,13 +35,7 @@ public sealed class CreateCommentCommandHandler : IRequestHandler<CreateCommentC
             throw new StockNotFoundException($"Stock with ID {request.StockId} not found");
 
         // Create comment entity
-        var comment = new Comment(
-            request.UserId,
-            request.StockId,
-            request.Title,
-            request.Content,
-            request.Rating
-        );
+        var comment = FinShark.Application.Mappers.CommentMapper.ToEntity(request);
 
         // Add to repository
         await _commentRepository.AddAsync(comment, cancellationToken);

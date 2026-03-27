@@ -1,4 +1,4 @@
-using FinShark.Domain.Interfaces;
+using FinShark.Application.Common;
 using Microsoft.Extensions.Logging;
 
 namespace FinShark.Infrastructure.Email;

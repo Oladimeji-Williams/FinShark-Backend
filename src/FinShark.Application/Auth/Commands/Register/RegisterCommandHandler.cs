@@ -1,6 +1,7 @@
 using FinShark.Application.Auth.Commands.Register;
 using FinShark.Application.Auth.Services;
 using FinShark.Application.Dtos;
+using FinShark.Application.Mappers;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -17,15 +18,7 @@ public sealed class RegisterCommandHandler(
     {
         try
         {
-            var registerRequest = new RegisterRequestDto(
-                request.Email,
-                request.Password,
-                request.UserName,
-                request.FirstName,
-                request.LastName
-            );
-
-            var result = await authService.RegisterAsync(registerRequest);
+            var result = await authService.RegisterAsync(AuthMapper.ToRequest(request));
 
             if (result.Success)
             {

@@ -1,4 +1,4 @@
-using FinShark.Domain.Interfaces;
+using FinShark.Application.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

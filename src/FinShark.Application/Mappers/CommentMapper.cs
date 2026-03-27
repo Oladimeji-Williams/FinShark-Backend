@@ -1,14 +1,14 @@
 using FinShark.Application.Dtos;
+using FinShark.Application.Comments.Commands.CreateComment;
 using FinShark.Application.Comments.Commands.UpdateComment;
 using FinShark.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace FinShark.Application.Mappers;
 
 /// <summary>
 /// Manual mapper for Comment entity to/from DTOs
 /// </summary>
-public sealed class CommentMapper
+public static class CommentMapper
 {
     /// <summary>
     /// Maps Comment entity to GetCommentResponseDto
@@ -24,8 +24,8 @@ public sealed class CommentMapper
             Title = comment.Title,
             Content = comment.Content,
             Rating = comment.Rating,
-            Created = default,
-            Modified = default
+            Created = comment.Created,
+            Modified = comment.Modified
         };
     }
 
@@ -39,33 +39,18 @@ public sealed class CommentMapper
     }
 
     /// <summary>
-    /// Maps CreateCommentRequestDto to Comment entity
+    /// Maps CreateCommentCommand to Comment entity
     /// </summary>
-    public static Comment ToEntity(string userId, int stockId, CreateCommentRequestDto request)
+    public static Comment ToEntity(CreateCommentCommand command)
     {
-        if (request == null) throw new ArgumentNullException(nameof(request));
+        if (command == null) throw new ArgumentNullException(nameof(command));
 
         return new Comment(
-            userId,
-            stockId,
-            request.Title,
-            request.Content,
-            request.Rating
-        );
-    }
-
-    /// <summary>
-    /// Updates an existing Comment entity from UpdateCommentRequestDto
-    /// </summary>
-    public static void UpdateEntity(Comment comment, UpdateCommentRequestDto request)
-    {
-        if (comment == null) throw new ArgumentNullException(nameof(comment));
-        if (request == null) throw new ArgumentNullException(nameof(request));
-
-        comment.Update(
-            title: request.Title,
-            content: request.Content,
-            rating: request.Rating
+            command.UserId,
+            command.StockId,
+            command.Title,
+            command.Content,
+            command.Rating
         );
     }
 

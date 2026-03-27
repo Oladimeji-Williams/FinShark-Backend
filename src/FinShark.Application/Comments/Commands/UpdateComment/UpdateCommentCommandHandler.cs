@@ -28,6 +28,11 @@ public sealed class UpdateCommentCommandHandler : IRequestHandler<UpdateCommentC
         if (comment == null)
             throw new CommentNotFoundException($"Comment with ID {request.Id} not found");
 
+        if (!request.IsAdmin && !string.Equals(comment.UserId, request.RequestingUserId, StringComparison.Ordinal))
+        {
+            throw new ForbiddenOperationException("You are not allowed to update this comment.");
+        }
+
         // Update comment via mapper (manual mapping for explicit control)
         CommentMapper.UpdateEntity(comment, request);
 

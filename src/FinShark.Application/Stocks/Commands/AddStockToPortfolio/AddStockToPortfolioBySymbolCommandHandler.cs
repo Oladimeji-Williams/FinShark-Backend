@@ -1,6 +1,5 @@
-using FinShark.Domain.Entities;
+using FinShark.Application.Common;
 using FinShark.Domain.Exceptions;
-using FinShark.Domain.Interfaces;
 using FinShark.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -11,13 +10,13 @@ public sealed class AddStockToPortfolioBySymbolCommandHandler : IRequestHandler<
 {
     private readonly IStockRepository _stockRepository;
     private readonly IPortfolioRepository _portfolioRepository;
-    private readonly IFMPService _fmpService;
+    private readonly IFmpService _fmpService;
     private readonly ILogger<AddStockToPortfolioBySymbolCommandHandler> _logger;
 
     public AddStockToPortfolioBySymbolCommandHandler(
         IStockRepository stockRepository,
         IPortfolioRepository portfolioRepository,
-        IFMPService fmpService,
+        IFmpService fmpService,
         ILogger<AddStockToPortfolioBySymbolCommandHandler> logger)
     {
         _stockRepository = stockRepository ?? throw new ArgumentNullException(nameof(stockRepository));

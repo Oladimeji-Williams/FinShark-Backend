@@ -24,7 +24,7 @@ public sealed class AuthService(
     IConfiguration configuration,
     IHostEnvironment hostEnvironment,
     IAppUrlProvider appUrlProvider,
-    FinShark.Domain.Interfaces.IEmailService emailService,
+    IEmailService emailService,
     ILogger<AuthService> logger) : IAuthService
 {
     public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
@@ -237,7 +237,7 @@ public sealed class AuthService(
             var user = await userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                throw new Exception("User not found");
+                throw new KeyNotFoundException("User not found");
             }
 
             var roles = await userManager.GetRolesAsync(user);

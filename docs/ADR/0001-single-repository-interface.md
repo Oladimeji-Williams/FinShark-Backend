@@ -1,31 +1,30 @@
-# ADR 0001: Single Repository Interface per Bounded Context
+# ADR 0001: Repository Contracts by Bounded Context
 
 ## Status
+
 Accepted
 
 ## Context
-FinShark follows layered clean architecture with Domain, Application, Persistence, and API layers. To preserve strict DDD and separation of concerns, each bounded context (aggregate root) should define a single repository contract in the Domain layer. This avoids interface fragmentation, reduces coupling, and keeps implementation details behind a single consistent contract.
+
+The codebase follows clean architecture and CQRS, but persistence still needs stable seams for application handlers. Repository interfaces should stay cohesive and reflect business ownership rather than transport or ORM concerns.
 
 ## Decision
-We adopt a single repository interface per bounded context:
-- `IPortfolioRepository` for portfolio operations (get holdings, add/remove by user, etc.)
-- `IStockRepository` for stock CRUD and query operations
-- `ICommentRepository` for comment operations
 
-All repository contracts are declared in `FinShark.Domain.Interfaces.Repositories` (or equivalent Domain contract namespace). Application handlers depend only on these domain contracts. Persistence implements them.
+FinShark keeps one repository contract per bounded context:
 
-This decision is intentionally not using separate read/write repository interfaces for the same aggregate in this codebase to keep the model simple, consistent, and aligned with our current architecture conventions.
+- `IStockRepository`
+- `ICommentRepository`
+- `IPortfolioRepository`
+
+These contracts live in the domain layer, and persistence implements them.
 
 ## Consequences
-- ✅ Stronger aggregate boundary by keeping operations grouped under one clear contract.
-- ✅ Easier to understand and navigate repository APIs.
-- ✅ Application handlers remain decoupled from EF Core-specific details.
-- ✅ Persistence implementations remain replaceable without changing application code.
 
-- ⚠️ Larger repository interfaces can grow. We mitigate by keeping domain operations cohesive and aggregate-specific.
+- clearer aggregate ownership
+- better separation between stock CRUD and portfolio behavior
+- application handlers stay decoupled from EF Core details
+- repository growth must still be monitored so interfaces remain cohesive
 
-## Related Documents
-- `ARCHITECTURE.md`
-- `IMPLEMENTATION.md`
-- `README.md`
-- `QUICK_REFERENCE.md`
+## Notes
+
+This ADR does not mean read and write logic are merged at the application level. CQRS is still enforced through separate commands and queries.

@@ -1,574 +1,161 @@
-# FinShark Environment Configuration Guide
+# Environment Configuration
 
-Comprehensive guide to configuring FinShark for different environments.
+FinShark reads configuration from:
 
-## Environment Overview
+1. `appsettings.json`
+2. `appsettings.{Environment}.json`
+3. environment variables
+4. `.env` in non-production environments
 
-| Environment | Purpose | Connection | Logging | SSL |
-|------------|---------|-----------|---------|-----|
-| **Development** | Local development | Local SQL Server | Verbose | Self-signed |
-| **Testing** | Automated tests | In-Memory DB | Minimal | N/A |
-| **Staging** | Pre-production | Remote SQL Server | Detailed | Real cert |
-| **Production** | Live application | Production DB | Minimal (perf) | Real cert |
+For database connectivity, persistence also explicitly prefers:
 
----
+1. `FINSHARK_DB_CONNECTION`
+2. `ConnectionStrings:DefaultConnection`
 
-## Configuration Files
+## Core Variables
 
-```
-finshark-backend/
-├── appsettings.json              # Base configuration
-├── appsettings.Development.json  # Dev overrides
-├── appsettings.Testing.json      # Test overrides
-├── appsettings.Staging.json      # Staging overrides
-├── appsettings.Production.json   # Production overrides
-```
+### Hosting
 
----
+- `ASPNETCORE_ENVIRONMENT`
+- `ASPNETCORE_URLS`
 
-## appsettings.json (Base Configuration)
+Recommended local values:
 
-Default settings for all environments:
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=(local);Database=FinSharkDb;Trusted_Connection=true;TrustServerCertificate=true;"
-  },
-  "Serilog": {
-    "MinimumLevel": "Information",
-    "WriteTo": [
-      {
-        "Name": "Console"
-      },
-      {
-        "Name": "File",
-        "Args": {
-          "path": "bin/Debug/logs/.txt",
-          "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{Level:u3}] {Message:lj}{NewLine}{Exception}"
-        }
-      }
-    ]
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft": "Warning",
-      "Microsoft.EntityFrameworkCore": "Information"
-    }
-  },
-  "Kestrel": {
-    "Endpoints": {
-      "Http": {
-        "Url": "http://localhost:5000"
-      },
-      "Https": {
-        "Url": "https://localhost:5001",
-        "Certificate": {
-          "Path": null,
-          "Password": null
-        }
-      }
-    }
-  },
-  "AllowedHosts": "*",
-  "AppSettings": {
-    "ApiTitle": "FinShark Stock API",
-    "ApiVersion": "1.0"
-  }
-}
+```env
+ASPNETCORE_ENVIRONMENT=Development
+ASPNETCORE_URLS=https://localhost:7235;http://localhost:5192
 ```
 
----
+### Database
 
-## Development Configuration
+- `FINSHARK_DB_CONNECTION`
+- `FINSHARK_USE_INMEMORY_DB`
 
-**File**: `appsettings.Development.json`
+Examples:
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=(local);Database=FinSharkDb_Dev;Trusted_Connection=true;TrustServerCertificate=true;"
-  },
-  "Serilog": {
-    "MinimumLevel": "Debug",
-    "WriteTo": [
-      {
-        "Name": "Console",
-        "Args": {
-          "outputTemplate": "[{Timestamp:HH:mm:ss.fff}] [{Level:u3}] {SourceContext:l}: {Message:lj}{NewLine}{Exception}"
-        }
-      },
-      {
-        "Name": "File",
-        "Args": {
-          "path": "bin/Debug/logs/finshark-.txt",
-          "rollingInterval": "Day",
-          "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}"
-        }
-      }
-    ]
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Debug",
-      "Microsoft": "Information",
-      "Microsoft.EntityFrameworkCore": "Debug",
-      "Microsoft.EntityFrameworkCore.Database.Command": "Debug"
-    }
-  },
-  "AppSettings": {
-    "EnableSwagger": true,
-    "EnableDetailedErrors": true,
-    "CorsEnabled": true
-  }
-}
+```env
+FINSHARK_DB_CONNECTION=Server=(localdb)\mssqllocaldb;Database=FinSharkDb;Trusted_Connection=True;MultipleActiveResultSets=true
+FINSHARK_USE_INMEMORY_DB=false
 ```
 
-**Usage**:
-```bash
-# Automatically loads when ASPNETCORE_ENVIRONMENT=Development
-dotnet run
-```
+Notes:
 
-**Key Features**:
-- Verbose logging (Debug level)
-- Local database with `_Dev` suffix
-- Detailed error messages
-- Swagger UI enabled
-- Self-signed HTTPS certificate
+- set `FINSHARK_USE_INMEMORY_DB=true` for test-style or ephemeral runs
+- when in-memory mode is enabled, SQL Server is not used
 
----
+### JWT
 
-## Testing Configuration
+- `Jwt__Key`
+- `Jwt__Issuer`
+- `Jwt__Audience`
+- `Jwt__ExpiryInMinutes`
 
-**File**: `appsettings.Testing.json`
+Production guidance:
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Data Source=:memory:"
-  },
-  "Serilog": {
-    "MinimumLevel": "Warning",
-    "WriteTo": []
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Warning",
-      "Microsoft": "Error"
-    }
-  },
-  "AppSettings": {
-    "EnableSwagger": false,
-    "EnableDetailedErrors": false
-  }
-}
-```
+- use a strong secret
+- manage the secret outside source control
+- keep issuer and audience aligned with deployed clients
 
-**Usage**:
-```bash
-# Set environment variable
-$env:ASPNETCORE_ENVIRONMENT = "Testing"
-dotnet test
+### Client URL
 
-# Or inline
-dotnet test --configuration Debug /p:ASPNETCORE_ENVIRONMENT=Testing
-```
+- `AppSettings__ClientUrl`
 
-**Key Features**:
-- In-memory database (fast, no I/O)
-- Logging disabled (performance)
-- No detailed errors
-- Swagger disabled
-- Dev/test Data Protection keys are persisted under `src/FinShark.API/App_Data/DataProtection-Keys`
+Used for:
 
----
-
-## Staging Configuration
-
-**File**: `appsettings.Staging.json`
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=staging-db.company.local;Database=FinSharkDb_Staging;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=true;"
-  },
-  "Serilog": {
-    "MinimumLevel": "Information",
-    "WriteTo": [
-      {
-        "Name": "Console"
-      },
-      {
-        "Name": "File",
-        "Args": {
-          "path": "/var/logs/finshark/finshark-.txt",
-          "rollingInterval": "Day",
-          "retainedFileCountLimit": 7
-        }
-      }
-    ]
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.EntityFrameworkCore": "Warning"
-    }
-  },
-  "Kestrel": {
-    "Endpoints": {
-      "Http": {
-        "Url": "http://localhost:5000"
-      },
-      "Https": {
-        "Url": "https://localhost:5001",
-        "Certificate": {
-          "Path": "/etc/ssl/certs/staging.pfx",
-          "Password": "${CERT_PASSWORD}"
-        }
-      }
-    }
-  },
-  "AppSettings": {
-    "EnableSwagger": false,
-    "EnableDetailedErrors": false,
-    "CorsEnabled": true,
-    "AllowedOrigins": [
-      "https://staging-app.company.local"
-    ]
-  }
-}
-```
-
-**Usage**:
-```bash
-# Push to staging server
-git push staging main
-
-# Server runs with:
-$env:ASPNETCORE_ENVIRONMENT = "Staging"
-dotnet run --configuration Release
-```
-
-**Key Features**:
-- Remote database
-- Secrets from environment variables
-- Real SSL certificate
-- Limited logging for performance
-- Specific CORS origins
-
----
-
-## Production Configuration
-
-**File**: `appsettings.Production.json`
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=prod-db.company.local;Database=FinSharkDb_Prod;User Id=prod_user;Password=${DB_PASSWORD};TrustServerCertificate=false;Encrypt=true;"
-  },
-  "Serilog": {
-    "MinimumLevel": "Warning",
-    "WriteTo": [
-      {
-        "Name": "File",
-        "Args": {
-          "path": "/var/log/finshark/finshark-.txt",
-          "rollingInterval": "Day",
-          "retainedFileCountLimit": 30,
-          "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{Level:u3}] {Message:lj}{NewLine}{Exception}"
-        }
-      }
-    ]
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Warning",
-      "Microsoft": "Error",
-      "Microsoft.EntityFrameworkCore": "Error"
-    }
-  },
-  "Kestrel": {
-    "Endpoints": {
-      "Https": {
-        "Url": "https://0.0.0.0:443",
-        "Certificate": {
-          "Path": "/etc/ssl/certs/finshark.pfx",
-          "Password": "${CERT_PASSWORD}"
-        }
-      }
-    }
-  },
-  "AllowedHosts": "api.finshark.com",
-  "AppSettings": {
-    "EnableSwagger": false,
-    "EnableDetailedErrors": false,
-    "CorsEnabled": true,
-    "AllowedOrigins": [
-      "https://finshark.com",
-      "https://www.finshark.com"
-    ],
-    "SecurityHeaders": {
-      "StrictTransportSecurity": "max-age=31536000; includeSubDomains",
-      "X-Content-Type-Options": "nosniff",
-      "X-Frame-Options": "DENY",
-      "X-XSS-Protection": "1; mode=block"
-    }
-  }
-}
-```
-
-**Deployment**:
-```bash
-# Build for production
-dotnet publish -c Release -o ./publish
-
-# Run on production server
-$env:ASPNETCORE_ENVIRONMENT = "Production"
-$env:ASPNETCORE_URLS = "https://0.0.0.0:443"
-dotnet ./publish/FinShark.API.dll
-```
-
-**Key Features**:
-- Minimal logging (file only)
-- Remote production database
-- Real SSL certificate (not self-signed)
-- No Swagger UI
-- Strict CORS
-- Security headers
-- 30-day log retention
-
----
-
-## Environment Variables
-
-Use environment variables for sensitive data:
-
-```powershell
-# Development
-$env:ASPNETCORE_ENVIRONMENT = "Development"
-$env:DB_PASSWORD = "local-password"
-
-# Staging
-$env:ASPNETCORE_ENVIRONMENT = "Staging"
-$env:DB_PASSWORD = "staging-password"
-$env:CERT_PASSWORD = "certificate-password"
-
-# Production (use secrets manager in production)
-$env:ASPNETCORE_ENVIRONMENT = "Production"
-```
-
-**In Program.cs**:
-```csharp
-var builder = WebApplicationBuilder.CreateBuilder(args);
-
-// Automatically loaded from environment
-var dbPassword = builder.Configuration["DB_PASSWORD"];
-```
-
----
-
-## Database Configuration by Environment
-
-### Development
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=(local);Database=FinSharkDb_Dev;Trusted_Connection=true;TrustServerCertificate=true;"
-  }
-}
-```
-
-**Setup**:
-```powershell
-# Create dev database
-cd src/FinShark.API
-dotnet ef database update
-```
-
-### Testing
-
-In-memory database configured in tests:
-
-```csharp
-var options = new DbContextOptionsBuilder<AppDbContext>()
-    .UseInMemoryDatabase("TestDb" + Guid.NewGuid())
-    .Options;
-```
-
-### Staging/Production
-
-Remote SQL Server:
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=prod-db.company.local;Database=FinSharkDb_Prod;User Id=sa;Password=${DB_PASSWORD};Encrypt=true;TrustServerCertificate=false;"
-  }
-}
-```
-
----
-
-## Logging Configuration by Environment
-
-### Development - Verbose
-
-```
-[12:34:56.789] [DBG] Creating stock with symbol 'AAPL'
-[12:34:56.890] [DBG] Validating stock data...
-[12:34:56.891] [INF] Stock created successfully with ID 1
-```
-
-### Production - Minimal
-
-```
-[2026-03-12 12:34:56.789] [WRN] Slow database query: 2500ms
-[2026-03-12 12:34:57.123] [ERR] Exception: NullReferenceException
-```
-
----
-
-## SSL/TLS Configuration
-
-### Development (Self-Signed)
-
-```powershell
-# Create and trust certificate
-dotnet dev-certs https --trust
-
-# Run on HTTPS
-dotnet run
-```
-
-### Staging/Production (Real Certificate)
-
-```json
-{
-  "Kestrel": {
-    "Endpoints": {
-      "Https": {
-        "Url": "https://0.0.0.0:443",
-        "Certificate": {
-          "Path": "/etc/ssl/certs/finshark.pfx",
-          "Password": "${CERT_PASSWORD}"
-        }
-      }
-    }
-  }
-}
-```
-
----
-
-## CORS Configuration
-
-### Development (Allow All)
-
-```csharp
-builder.Services.AddCors(options => {
-    options.AddPolicy("AllowAll", builder => {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
-    });
-});
-```
-
-### Production (Restrict)
-
-```csharp
-var allowedOrigins = builder.Configuration.GetSection("AppSettings:AllowedOrigins")
-    .Get<string[]>();
-
-builder.Services.AddCors(options => {
-    options.AddPolicy("RestrictedCors", builder => {
-        builder.WithOrigins(allowedOrigins)
-               .AllowAnyMethod()
-               .AllowAnyHeader()
-               .AllowCredentials();
-    });
-});
-```
-
----
-
-## Configuration Provider Priority
-
-(Higher priority overrides lower)
-
-1. Command-line arguments: `dotnet run --key=value`
-2. Environment variables: `$env:KEY=value`
-3. appsettings.{Environment}.json
-4. appsettings.json
-5. Default values in code
+- generating email confirmation links
 
 Example:
-```powershell
-# This takes highest priority
-$env:ConnectionStrings__DefaultConnection = "Server=override;..."
-dotnet run
+
+```env
+AppSettings__ClientUrl=https://app.example.com
 ```
 
----
+### Financial Modeling Prep
 
-## Checking Current Configuration
+- `FMP__BaseUrl`
+- `FMP__ApiKey`
+- `FMP__TimeoutSeconds`
 
-```csharp
-// In Program.cs
-var config = builder.Configuration;
-var connString = config.GetConnectionString("DefaultConnection");
-var environment = builder.Environment.EnvironmentName;
+Example:
 
-Console.WriteLine($"Environment: {environment}");
-Console.WriteLine($"Connection: {connString}");
+```env
+FMP__BaseUrl=https://financialmodelingprep.com
+FMP__ApiKey=your-real-key
+FMP__TimeoutSeconds=30
 ```
 
-Or from command line:
-```powershell
-# Check current environment
-echo $env:ASPNETCORE_ENVIRONMENT
+### SMTP
 
-# Check all environment variables
-Get-ChildItem env: | Where-Object {$_.Name -like "*ASPNET*"}
+- `Smtp__Provider`
+- `Smtp__Host`
+- `Smtp__Port`
+- `Smtp__EnableSsl`
+- `Smtp__UseDefaultCredentials`
+- `Smtp__UserName`
+- `Smtp__Password`
+- `Smtp__FromEmail`
+- `Smtp__FromName`
+- `Smtp__TimeoutInMilliseconds`
+
+Important behavior:
+
+- if `Host` or `FromEmail` is missing, the app uses `NoOpEmailService`
+- the health endpoint then reports a degraded status with SMTP warnings
+- registration and resend-confirmation still succeed even if email delivery fails
+
+### CORS
+
+- `Cors__AllowedOrigins`
+- `Cors__AllowAllMethods`
+- `Cors__AllowAllHeaders`
+- `Cors__AllowCredentials`
+
+Production guidance:
+
+- do not leave `AllowedOrigins=*` in production
+- only enable credentials when using explicit origins
+
+## Sample Development `.env`
+
+```env
+ASPNETCORE_ENVIRONMENT=Development
+ASPNETCORE_URLS=https://localhost:7235;http://localhost:5192
+FINSHARK_DB_CONNECTION=Server=(localdb)\mssqllocaldb;Database=FinSharkDb;Trusted_Connection=True;MultipleActiveResultSets=true
+Jwt__Key=replace-with-a-dev-secret-at-least-32-characters-long
+Jwt__Issuer=FinShark
+Jwt__Audience=FinSharkUsers
+Jwt__ExpiryInMinutes=60
+AppSettings__ClientUrl=https://localhost:7235
+FMP__BaseUrl=https://financialmodelingprep.com
+FMP__ApiKey=your-fmp-key
+FMP__TimeoutSeconds=30
+Smtp__Provider=Mailtrap
+Smtp__Host=smtp.mailtrap.io
+Smtp__Port=2525
+Smtp__EnableSsl=true
+Smtp__UseDefaultCredentials=false
+Smtp__UserName=mailtrap-user
+Smtp__Password=mailtrap-password
+Smtp__FromEmail=no-reply@finshark.local
+Smtp__FromName=FinShark
+Smtp__TimeoutInMilliseconds=15000
+Cors__AllowedOrigins=https://localhost:3001,http://localhost:3000
+Cors__AllowAllMethods=true
+Cors__AllowAllHeaders=true
 ```
 
----
+## Production Checklist
 
-## Configuration Best Practices
+- provide `FINSHARK_DB_CONNECTION`
+- provide a strong `Jwt__Key`
+- set `AppSettings__ClientUrl` to the deployed frontend
+- provide real SMTP credentials
+- provide `FMP__ApiKey`
+- restrict `Cors__AllowedOrigins`
+- run with `ASPNETCORE_ENVIRONMENT=Production`
 
-✅ **Do This**:
-- Use environment-specific files
-- Store secrets in environment variables
-- Use User Secrets in development
-- Encrypt sensitive data in transit
-- Document required environment variables
+## Notes About the Current Code
 
-❌ **Never Do This**:
-- Hardcode passwords in appsettings.json
-- Commit secrets to git
-- Share .pfx certificates in repositories
-- Log sensitive data
-- Use plaintext HTTP in production
-
----
-
-## Command Reference
-
-```bash
-# Run with specific environment
-$env:ASPNETCORE_ENVIRONMENT = "Development"
-dotnet run
-
-# Build for production
-dotnet publish -c Release -o ./publish
-
-# Run published app
-dotnet ./publish/FinShark.API.dll
-
-# Check configuration
-dotnet run --help
-```
+- `.env` loading is skipped in Production
+- OpenAPI JSON is exposed only in Development
+- the current code still sets `options.SignIn.RequireConfirmedEmail = false`, but login explicitly blocks unconfirmed users, so email confirmation is still required in practice

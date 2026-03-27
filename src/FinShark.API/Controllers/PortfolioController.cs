@@ -3,7 +3,6 @@ using FinShark.Application.Dtos;
 using FinShark.Application.Stocks.Commands.AddStockToPortfolio;
 using FinShark.Application.Stocks.Commands.RemoveStockFromPortfolio;
 using FinShark.Application.Stocks.Queries.GetPortfolioStocks;
-using FinShark.Domain.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,10 +12,8 @@ namespace FinShark.API.Controllers;
 /// <summary>
 /// Portfolio controller for user-specific portfolio operations
 /// </summary>
-[ApiController]
 [Route("api/portfolio")]
-[Produces("application/json")]
-public sealed class PortfolioController : ControllerBase
+public sealed class PortfolioController : ApiControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<PortfolioController> _logger;
@@ -29,9 +26,9 @@ public sealed class PortfolioController : ControllerBase
 
     [HttpGet]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<GetStockResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<IEnumerable<GetStockResponseDto>>>> GetPortfolio(CancellationToken cancellationToken)
     { 
         var userId = User.GetUserId();
@@ -48,10 +45,10 @@ public sealed class PortfolioController : ControllerBase
 
     [HttpPost("{stockId:int:min(1)}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<bool>>> AddToPortfolio(int stockId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -68,11 +65,11 @@ public sealed class PortfolioController : ControllerBase
 
     [HttpPost("symbol/{symbol}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<bool>>> AddToPortfolioBySymbol(string symbol, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -89,29 +86,17 @@ public sealed class PortfolioController : ControllerBase
         }
 
         _logger.LogInformation("POST /api/portfolio/symbol/{Symbol} - Adding stock to portfolio for user {UserId}", symbol, userId);
-        try
-        {
-            var result = await _mediator.Send(new AddStockToPortfolioBySymbolCommand(userId, symbol), cancellationToken);
-            return Ok(ApiResponse<bool>.SuccessResponse(result, result ? "Stock added to portfolio" : "Stock not added (already exists or not found)"));
-        }
-        catch (StockNotFoundException ex)
-        {
-            _logger.LogWarning(ex, "Stock not found during portfolio-by-symbol add for user {UserId}", userId);
-            return NotFound(ApiResponse<bool>.FailureResponse(ex.Message));
-        }
-        catch (FMPServiceException ex)
-        {
-            _logger.LogWarning(ex, "FMP service error while adding stock by symbol for user {UserId}", userId);
-            return BadRequest(ApiResponse<bool>.FailureResponse(ex.Message, ex.FmpStatusCode, ex.Suggestion));
-        }
+        var result = await _mediator.Send(new AddStockToPortfolioBySymbolCommand(userId, symbol), cancellationToken);
+        return Ok(ApiResponse<bool>.SuccessResponse(result, result ? "Stock added to portfolio" : "Stock not added (already exists or not found)"));
     }
 
     [HttpDelete("{stockId:int:min(1)}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<bool>>> RemoveFromPortfolio(
         int stockId,
         CancellationToken cancellationToken,

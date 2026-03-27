@@ -1,242 +1,98 @@
-# FinShark Backend - Setup Guide
+# Setup Guide
+
+This guide covers the fastest path to running FinShark locally with either SQL Server or the in-memory database.
 
 ## Prerequisites
 
-- **.NET 10.0 SDK** or later - [Download](https://dotnet.microsoft.com/en-us/download/dotnet)
-- **SQL Server 2019** or later (or SQL Server Express)
-- **Git** for version control
-- **Visual Studio Code** or **Visual Studio 2022** (recommended)
+- .NET 10 SDK
+- SQL Server or LocalDB if you want a persistent database
+- PowerShell
 
-## Initial Setup
+## 1. Restore Dependencies
 
-### 1. Clone the Repository
-
-```bash
-git clone <repository-url>
-cd finshark-backend
-```
-
-### 2. Install Dependencies
-
-```bash
+```powershell
 dotnet restore
 ```
 
-This automatically downloads all NuGet packages defined in the `.csproj` files.
+## 2. Configure Environment
 
-### 3. Configure Database Connection
+Copy `.env.example` to `.env` and fill in real values where needed.
 
-Update the connection string in `appsettings.json`:
+Minimum recommended local configuration:
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=YOUR_SERVER;Database=FinSharkDb;Trusted_Connection=true;TrustServerCertificate=true;"
-  }
-}
+```env
+ASPNETCORE_ENVIRONMENT=Development
+Jwt__Key=replace-with-a-real-dev-secret-of-at-least-32-characters
+AppSettings__ClientUrl=https://localhost:7235
+FINSHARK_DB_CONNECTION=Server=(localdb)\mssqllocaldb;Database=FinSharkDb;Trusted_Connection=True;MultipleActiveResultSets=true
+FMP__ApiKey=your-fmp-key
 ```
 
-**Local SQL Server Examples:**
-- **Local Machine**: `Server=(local);Database=FinSharkDb;Trusted_Connection=true;TrustServerCertificate=true;`
-- **SQL Server Express**: `Server=.\\SQLEXPRESS;Database=FinSharkDb;Trusted_Connection=true;TrustServerCertificate=true;`
-- **Remote Server**: `Server=your-server-address;Database=FinSharkDb;User Id=sa;Password=your-password;`
+Notes:
 
-### 4. Create the Database
+- `.env` is loaded automatically outside Production.
+- `FINSHARK_DB_CONNECTION` overrides `ConnectionStrings:DefaultConnection`.
+- `FINSHARK_USE_INMEMORY_DB=true` skips SQL Server entirely.
 
-Navigate to the API project and run:
+## 3. Apply Database Migrations
 
-```bash
-cd src/FinShark.API
-dotnet ef database update
+```powershell
+dotnet ef database update --project src/FinShark.Persistence --startup-project src/FinShark.API
 ```
 
-This creates the database and applies all migrations.
+## 4. Run the API
 
-### 5. Verify Setup
-
-Build the project to ensure everything compiles:
-
-```bash
-cd ../..
-dotnet build
+```powershell
+dotnet run --project src/FinShark.API/FinShark.API.csproj
 ```
 
-Expected output: `Build succeeded`
+Local profiles:
 
-### 6. Run the Application
-
-```bash
-cd src/FinShark.API
-dotnet run
-```
-
-The API will start at:
 - HTTP: `http://localhost:5192`
 - HTTPS: `https://localhost:7235`
 
-Visit `https://localhost:7235/openapi/v1.json` to view the OpenAPI schema.
+## 5. Verify the Application
 
-## Project Structure
-
-```
-finshark-backend/
-├── src/
-│   ├── FinShark.Domain/              # Business entities & interfaces
-│   ├── FinShark.Application/         # Use cases, validators, mappers, DTOs
-│   ├── FinShark.Persistence/         # Database context, repositories
-│   ├── FinShark.Infrastructure/      # External services
-│   └── FinShark.API/                 # Controllers, middleware, configuration
-├── tests/                            # Unit & integration tests
-├── FinShark.slnx                     # Solution file
-├── appsettings.json                  # Configuration
-└── README.md
+```powershell
+Invoke-RestMethod -Uri "https://localhost:7235/api/health" -SkipCertificateCheck
 ```
 
-## Dependency Tree
+In Development, OpenAPI JSON is also available at:
 
-```
-FinShark.API (depends on)
-  ├── FinShark.Application
-  ├── FinShark.Persistence
-  └── FinShark.Infrastructure
-
-FinShark.Application (depends on)
-  ├── FinShark.Domain
-  └── External: MediatR, FluentValidation
-
-FinShark.Persistence (depends on)
-  ├── FinShark.Domain
-  └── External: EF Core, SQL Server
-
-FinShark.Domain (depends on)
-  └── None (pure business logic)
-
-FinShark.Infrastructure (depends on)
-  ├── FinShark.Application
-  └── FinShark.Domain
+```text
+https://localhost:7235/openapi/v1.json
 ```
 
-## Common Tasks
+## Optional: Run With In-Memory Database
 
-### Add a New Package
+Useful for quick local validation when SQL Server is unavailable.
 
-```bash
-cd src/FinShark.Application
-dotnet add package PackageName --version 1.0.0
+```powershell
+$env:FINSHARK_USE_INMEMORY_DB='true'
+dotnet run --project src/FinShark.API/FinShark.API.csproj
 ```
 
-### Create a Database Migration
+## Optional: Seed Sample Data
 
-```bash
-cd src/FinShark.API
-dotnet ef migrations add MigrationName -p ../FinShark.Persistence
+```powershell
+dotnet run --project src/FinShark.API/FinShark.API.csproj -- --seed
 ```
 
-### Update Database to Latest Migration
+Seed behavior:
 
-```bash
-cd src/FinShark.API
-dotnet ef database update
-```
+- Creates `Admin` and `User` roles if missing
+- Creates `seeduser@example.com`
+- Inserts sample stocks
+- Inserts two sample comments per stock
 
-### Run Tests
+## Optional: Run the API Request Collection
 
-```bash
-dotnet test
-```
+The REST client file is [FinShark.API.http](/c:/Users/OladimejiWilliams/Desktop/Software%20Engineering/FinShark/finshark-backend/src/FinShark.API/FinShark.API.http).
 
-### Clean Build
+You can use it from VS Code REST Client or copy requests into Postman/Insomnia.
 
-```bash
-dotnet clean
-dotnet build
-```
+## Common Next Steps
 
-## Environment Configuration
-
-### Development (`appsettings.Development.json`)
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft": "Warning"
-    }
-  },
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=(local);Database=FinSharkDb_Dev;Trusted_Connection=true;TrustServerCertificate=true;"
-  }
-}
-```
-
-### Production
-
-Set via environment variables or Azure Key Vault:
-
-```bash
-export ConnectionStrings__DefaultConnection="your-production-connection-string"
-export ASPNETCORE_ENVIRONMENT=Production
-```
-
-## Troubleshooting
-
-### Issue: "Connection string 'DefaultConnection' not found"
-
-**Solution**: Ensure `appsettings.json` has the correct connection string configured.
-
-### Issue: Database migration fails
-
-**Solution**: 
-```bash
-# Check for unapplied migrations
-dotnet ef migrations list
-
-# Revert to previous migration if needed
-dotnet ef database update [PreviousMigrationName]
-```
-
-### Issue: Port already in use (5192 or 7235)
-
-**Solution**: Either stop the application using the port or modify `Properties/launchSettings.json`:
-
-```json
-{
-  "applicationUrl": "https://localhost:7236;http://localhost:5193"
-}
-```
-
-### Issue: NuGet package restore fails
-
-**Solution**:
-```bash
-dotnet nuget locals all --clear
-dotnet restore
-```
-
-## IDE Setup
-
-### Visual Studio Code
-
-1. Install extensions:
-   - C# Dev Kit
-   - REST Client
-   - SQL Server (mssql)
-
-2. Open workspace:
-   ```bash
-   code .
-   ```
-
-### Visual Studio 2022
-
-1. Open `FinShark.slnx` solution file
-2. Wait for initial project loading
-3. Set `FinShark.API` as startup project (right-click → Set as Startup Project)
-4. Press `F5` to run
-
-## Next Steps
-
-- Read [IMPLEMENTATION.md](./IMPLEMENTATION.md) to learn how to add features
-- Review [QUICK_REFERENCE.md](./QUICK_REFERENCE.md) for common patterns
-- Check [README.md](./README.md) for project overview
+- Read [API_ENDPOINTS.md](API_ENDPOINTS.md) for route details
+- Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing layer boundaries
+- Read [TROUBLESHOOTING.md](TROUBLESHOOTING.md) if startup fails

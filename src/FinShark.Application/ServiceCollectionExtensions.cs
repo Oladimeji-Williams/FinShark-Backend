@@ -1,3 +1,5 @@
+using FinShark.Application.Auth.Commands.AssignRole;
+using FinShark.Application.Auth.Commands.ChangePassword;
 using FinShark.Application.Auth.Commands.Login;
 using FinShark.Application.Auth.Commands.Register;
 using FinShark.Application.Auth.Commands.UpdateProfile;
@@ -49,6 +51,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IValidator<RegisterCommand>, RegisterCommandValidator>();
         services.AddScoped<IValidator<LoginCommand>, LoginCommandValidator>();
         services.AddScoped<IValidator<UpdateProfileCommand>, UpdateProfileCommandValidator>();
+        services.AddScoped<IValidator<ChangePasswordCommand>, ChangePasswordCommandValidator>();
+        services.AddScoped<IValidator<AssignRoleCommand>, AssignRoleCommandValidator>();
 
         // MediatR pipeline behaviors
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));

@@ -1,292 +1,115 @@
-﻿# FinShark Validation Rules Documentation
+# Validation Rules
 
-Comprehensive validation rules and FluentValidation implementation guide.
+FinShark validates requests through FluentValidation and JSON converters.
 
-## Validation Architecture
+## Authentication
 
-Request -> DTO Binding -> MediatR ValidationBehavior -> Validator Rules -> Handler -> Domain Invariants
+### Register
 
----
+- `email` is required and must be a valid email
+- `userName` is required, 3 to 50 characters, letters/numbers/underscore/hyphen only
+- `password` is required, minimum 8 characters, with uppercase, lowercase, number, and symbol
+- `firstName` max 50 characters when provided
+- `lastName` max 50 characters when provided
 
-## FluentValidation Setup
+### Login
 
-Validation is registered in the Application layer and applied through a MediatR pipeline behavior.
+- `email` is required and must be a valid email
+- `password` is required
 
-```csharp
-// FinShark.Application/ServiceCollectionExtensions.cs
-public static IServiceCollection AddApplicationServices(this IServiceCollection services)
-{
-    services.AddMediatR(config =>
-    {
-        config.RegisterServicesFromAssemblyContaining<CreateStockValidator>();
-    });
+### Update Profile
 
-    // FluentValidation - manually register command validators
-    services.AddScoped<IValidator<CreateStockCommand>, CreateStockValidator>();
-    services.AddScoped<IValidator<UpdateStockCommand>, UpdateStockValidator>();
-    services.AddScoped<IValidator<CreateCommentCommand>, CreateCommentValidator>();
-    services.AddScoped<IValidator<UpdateCommentCommand>, UpdateCommentValidator>();
+- at least one of `userName`, `firstName`, or `lastName` must be provided
+- `userName` 3 to 50 characters when provided
+- `userName` allows letters, numbers, underscores, and hyphens
+- `firstName` max 50 characters when provided
+- `lastName` max 50 characters when provided
 
-    // MediatR pipeline behaviors
-    services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+### Change Password
 
-    return services;
-}
-```
+- `userId` is required
+- `currentPassword` is required
+- `newPassword` is required
+- `newPassword` minimum 8 characters
+- `newPassword` must contain uppercase, lowercase, digit, and symbol
 
----
+### Assign Role
 
-## Stock Validation Rules
+- `userId` is required
+- `role` is required
+- `role` max 100 characters
 
-### Create Stock Validator
+## Stocks
 
-```csharp
-// FinShark.Application/Stocks/Validators/CreateStockValidator.cs
-public sealed class CreateStockValidator : AbstractValidator<CreateStockCommand>
-{
-    public CreateStockValidator()
-    {
-        RuleFor(x => x.Symbol)
-            .NotEmpty()
-                .WithMessage("Stock symbol is required.")
-            .MaximumLength(10)
-                .WithMessage("Stock symbol cannot exceed 10 characters.")
-            .Matches(@"^[A-Z0-9.]+$")
-                .WithMessage("Stock symbol must contain only uppercase letters, numbers, and dots (e.g., AB.C).");
+### Create Stock
 
-        RuleFor(x => x.CompanyName)
-            .NotEmpty()
-                .WithMessage("Company name is required.")
-            .MaximumLength(255)
-                .WithMessage("Company name cannot exceed 255 characters.");
+- `symbol` is required
+- `symbol` max 10 characters
+- `symbol` must use uppercase letters, digits, and dots only
+- `companyName` is required
+- `companyName` max 255 characters
+- `currentPrice` must be greater than 0
+- `marketCap` must be at least 0
+- `marketCap` max 2 decimal places
 
-        RuleFor(x => x.CurrentPrice)
-            .GreaterThan(0)
-                .WithMessage("Current price must be greater than zero.")
-            .LessThanOrEqualTo(decimal.MaxValue)
-                .WithMessage("Current price is too large.");
+### Update Stock
 
-        RuleFor(x => x.MarketCap)
-            .GreaterThanOrEqualTo(0)
-                .WithMessage("Market cap must be greater than or equal to 0")
-            .PrecisionScale(18, 2, ignoreTrailingZeros: true)
-                .WithMessage("Market cap must have at most 2 decimal places");
-    }
-}
-```
+- `id` must be greater than 0
+- `symbol` follows create rules when provided
+- `companyName` max 255 characters when provided
+- `currentPrice` greater than 0 when provided
+- `currentPrice` max 2 decimal places when provided
+- `marketCap` at least 0 when provided
+- `marketCap` max 2 decimal places when provided
 
-### Update Stock Validator
+### Stock Query
 
-```csharp
-// FinShark.Application/Stocks/Validators/UpdateStockValidator.cs
-public sealed class UpdateStockValidator : AbstractValidator<UpdateStockCommand>
-{
-    public UpdateStockValidator()
-    {
-        RuleFor(x => x.Id)
-            .GreaterThan(0).WithMessage("Stock ID must be greater than 0");
+- `pageNumber` > 0 when provided
+- `pageSize` between 1 and 100 when provided
+- `symbol` max 10 characters when provided
+- `companyName` max 255 characters when provided
+- `sortBy` must be a valid enum
+- `sortDirection` must be a valid enum
+- `minPrice`, `maxPrice`, `minMarketCap`, `maxMarketCap` must be at least 0 when provided
+- `minPrice <= maxPrice`
+- `minMarketCap <= maxMarketCap`
 
-        RuleFor(x => x.Symbol)
-            .NotEmpty().WithMessage("Symbol is required")
-            .MaximumLength(10).WithMessage("Symbol must not exceed 10 characters")
-            .Matches(@"^[A-Z0-9.]+$").WithMessage("Symbol must contain only uppercase letters, numbers, and dots (e.g., AB.C)")
-            .When(x => x.Symbol != null);
+## Comments
 
-        RuleFor(x => x.CompanyName)
-            .NotEmpty().WithMessage("Company name is required")
-            .MaximumLength(255).WithMessage("Company name must not exceed 255 characters")
-            .When(x => x.CompanyName != null);
+### Create Comment
 
-        RuleFor(x => x.CurrentPrice)
-            .GreaterThan(0).WithMessage("Current price must be greater than 0")
-            .PrecisionScale(18, 2, ignoreTrailingZeros: true)
-            .WithMessage("Current price must have at most 2 decimal places")
-            .When(x => x.CurrentPrice.HasValue);
+- `stockId` > 0
+- `title` required, 3 to 200 characters
+- `content` required, 10 to 5000 characters
+- `rating` must be between 1 and 5
 
-        RuleFor(x => x.MarketCap)
-            .GreaterThanOrEqualTo(0).WithMessage("Market cap must be greater than or equal to 0")
-            .PrecisionScale(18, 2, ignoreTrailingZeros: true)
-            .WithMessage("Market cap must have at most 2 decimal places")
-            .When(x => x.MarketCap.HasValue);
-    }
-}
-```
+### Update Comment
 
-### Get Stocks Query Validator
+- `id` > 0
+- `title` 3 to 200 characters when provided
+- `content` 10 to 5000 characters when provided
+- `rating` between 1 and 5 when provided
 
-```csharp
-// FinShark.Application/Stocks/Validators/GetStocksQueryValidator.cs
-public sealed class GetStocksQueryValidator : AbstractValidator<GetStocksQuery>
-{
-    private const int MaxPageSize = 100;
+### Comment Query
 
-    public GetStocksQueryValidator()
-    {
-        RuleFor(x => x.QueryParameters)
-            .NotNull()
-            .WithMessage("Query parameters are required.");
+- `pageNumber` > 0 when provided
+- `pageSize` between 1 and 100 when provided
+- `sortBy` must be a valid enum
+- `sortDirection` must be a valid enum
+- `minRating` and `maxRating` must be between 1 and 5 when provided
+- `minRating <= maxRating`
+- for stock-specific comment queries, `stockId` > 0
 
-        When(x => x.QueryParameters != null, () =>
-        {
-            RuleFor(x => x.QueryParameters.PageNumber)
-                .GreaterThan(0)
-                .WithMessage("PageNumber must be greater than 0.")
-                .When(x => x.QueryParameters.PageNumber.HasValue);
+## JSON Conversion Rules
 
-            RuleFor(x => x.QueryParameters.PageSize)
-                .InclusiveBetween(1, MaxPageSize)
-                .WithMessage($"PageSize must be between 1 and {MaxPageSize}.")
-                .When(x => x.QueryParameters.PageSize.HasValue);
+### `SectorType`
 
-            RuleFor(x => x.QueryParameters.Symbol)
-                .MaximumLength(10)
-                .WithMessage("Symbol cannot exceed 10 characters.")
-                .When(x => !string.IsNullOrWhiteSpace(x.QueryParameters.Symbol));
+- accepts canonical strings such as `"Technology"`
+- accepts legacy numeric codes
+- invalid values fail model binding
 
-            RuleFor(x => x.QueryParameters.CompanyName)
-                .MaximumLength(255)
-                .WithMessage("Company name cannot exceed 255 characters.")
-                .When(x => !string.IsNullOrWhiteSpace(x.QueryParameters.CompanyName));
+### `Rating`
 
-            RuleFor(x => x.QueryParameters.SortBy)
-                .IsInEnum()
-                .WithMessage("SortBy is invalid.");
-
-            RuleFor(x => x.QueryParameters.SortDirection)
-                .IsInEnum()
-                .WithMessage("SortDirection is invalid.");
-
-            RuleFor(x => x.QueryParameters.MinPrice)
-                .GreaterThanOrEqualTo(0)
-                .WithMessage("MinPrice must be greater than or equal to 0.")
-                .When(x => x.QueryParameters.MinPrice.HasValue);
-
-            RuleFor(x => x.QueryParameters.MaxPrice)
-                .GreaterThanOrEqualTo(0)
-                .WithMessage("MaxPrice must be greater than or equal to 0.")
-                .When(x => x.QueryParameters.MaxPrice.HasValue);
-
-            RuleFor(x => x.QueryParameters.MinMarketCap)
-                .GreaterThanOrEqualTo(0)
-                .WithMessage("MinMarketCap must be greater than or equal to 0.")
-                .When(x => x.QueryParameters.MinMarketCap.HasValue);
-
-            RuleFor(x => x.QueryParameters.MaxMarketCap)
-                .GreaterThanOrEqualTo(0)
-                .WithMessage("MaxMarketCap must be greater than or equal to 0.")
-                .When(x => x.QueryParameters.MaxMarketCap.HasValue);
-
-            RuleFor(x => x.QueryParameters)
-                .Must(p => !p.MinPrice.HasValue || !p.MaxPrice.HasValue || p.MinPrice <= p.MaxPrice)
-                .WithMessage("MinPrice must be less than or equal to MaxPrice.");
-
-            RuleFor(x => x.QueryParameters)
-                .Must(p => !p.MinMarketCap.HasValue || !p.MaxMarketCap.HasValue || p.MinMarketCap <= p.MaxMarketCap)
-                .WithMessage("MinMarketCap must be less than or equal to MaxMarketCap.");
-        });
-    }
-}
-```
----
-
-## Comment Validation Rules
-
-### Create Comment Validator
-
-```csharp
-// FinShark.Application/Comments/Validators/CreateCommentValidator.cs
-public sealed class CreateCommentValidator : AbstractValidator<CreateCommentCommand>
-{
-    public CreateCommentValidator()
-    {
-        RuleFor(x => x.StockId)
-            .GreaterThan(0).WithMessage("Stock ID must be greater than 0");
-
-        RuleFor(x => x.Title)
-            .NotEmpty().WithMessage("Title is required")
-            .Length(3, 200).WithMessage("Title must be between 3 and 200 characters");
-
-        RuleFor(x => x.Content)
-            .NotEmpty().WithMessage("Content is required")
-            .Length(10, 5000).WithMessage("Content must be between 10 and 5000 characters");
-
-        RuleFor(x => x.Rating)
-            .Must(r => r.IsValid)
-            .WithMessage("Rating must be between 1 and 5");
-    }
-}
-```
-
-### Update Comment Validator
-
-```csharp
-// FinShark.Application/Comments/Validators/UpdateCommentValidator.cs
-public sealed class UpdateCommentValidator : AbstractValidator<UpdateCommentCommand>
-{
-    public UpdateCommentValidator()
-    {
-        RuleFor(x => x.Id)
-            .GreaterThan(0).WithMessage("Comment ID must be greater than 0");
-
-        RuleFor(x => x.Title)
-            .Length(3, 200).WithMessage("Title must be between 3 and 200 characters")
-            .When(x => x.Title != null);
-
-        RuleFor(x => x.Content)
-            .Length(10, 5000).WithMessage("Content must be between 10 and 5000 characters")
-            .When(x => x.Content != null);
-
-        RuleFor(x => x.Rating)
-            .Must(r => r == null || r.Value.IsValid)
-            .WithMessage("Rating must be between 1 and 5");
-    }
-}
-```
-
-### Get All Comments Query Validator
-
-```csharp
-// FinShark.Application/Comments/Validators/GetAllCommentsQueryValidator.cs
-public sealed class GetAllCommentsQueryValidator : AbstractValidator<GetAllCommentsQuery>
-{
-    public GetAllCommentsQueryValidator()
-    {
-        RuleFor(x => x.PageNumber)
-            .GreaterThan(0)
-            .When(x => x.PageNumber.HasValue);
-
-        RuleFor(x => x.PageSize)
-            .InclusiveBetween(1, 100)
-            .When(x => x.PageSize.HasValue);
-    }
-}
-```
-
-### Get Comments By Stock Id Query Validator
-
-```csharp
-// FinShark.Application/Comments/Validators/GetCommentsByStockIdQueryValidator.cs
-public sealed class GetCommentsByStockIdQueryValidator : AbstractValidator<GetCommentsByStockIdQuery>
-{
-    public GetCommentsByStockIdQueryValidator()
-    {
-        RuleFor(x => x.StockId)
-            .GreaterThan(0);
-
-        RuleFor(x => x.PageNumber)
-            .GreaterThan(0)
-            .When(x => x.PageNumber.HasValue);
-
-        RuleFor(x => x.PageSize)
-            .InclusiveBetween(1, 100)
-            .When(x => x.PageSize.HasValue);
-    }
-}
-```
-
----
-
-## Notes
-
-1. Existence checks and uniqueness rules that require database access (for example, duplicate stock symbols) are enforced in command handlers, not validators.
-2. Domain invariants remain in the domain layer (entity constructors and value objects).
+- accepts integers or numeric strings
+- values must resolve to 1 through 5
+- invalid values fail model binding

@@ -1,4 +1,5 @@
 using FinShark.Application.Auth.Services;
+using FinShark.Application.Common;
 using FinShark.Application.Dtos;
 using FinShark.Domain.Entities;
 using FinShark.Persistence.Services;
@@ -28,7 +29,7 @@ public class AuthServiceTests
 
         var loggerMock = new Mock<ILogger<AuthService>>();
 
-        var emailServiceMock = new Mock<FinShark.Domain.Interfaces.IEmailService>();
+        var emailServiceMock = new Mock<IEmailService>();
         emailServiceMock.Setup(m => m.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .Returns(Task.CompletedTask);
 

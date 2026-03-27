@@ -1,5 +1,4 @@
 using FinShark.Application.Comments.Queries.GetCommentsByStockId;
-using FinShark.Domain.Queries;
 using FluentValidation;
 
 namespace FinShark.Application.Comments.Validators;
@@ -14,40 +13,44 @@ public sealed class GetCommentsByStockIdQueryValidator : AbstractValidator<GetCo
 
     public GetCommentsByStockIdQueryValidator()
     {
+        RuleFor(x => x.QueryParameters)
+            .NotNull()
+            .WithMessage("Query parameters are required.");
+
         RuleFor(x => x.StockId)
             .GreaterThan(0)
             .WithMessage("Stock ID must be greater than 0.");
 
-        RuleFor(x => x.PageNumber)
+        RuleFor(x => x.QueryParameters.PageNumber)
             .GreaterThan(0)
             .WithMessage("PageNumber must be greater than 0.")
-            .When(x => x.PageNumber.HasValue);
+            .When(x => x.QueryParameters.PageNumber.HasValue);
 
-        RuleFor(x => x.PageSize)
+        RuleFor(x => x.QueryParameters.PageSize)
             .InclusiveBetween(1, MaxPageSize)
             .WithMessage($"PageSize must be between 1 and {MaxPageSize}.")
-            .When(x => x.PageSize.HasValue);
+            .When(x => x.QueryParameters.PageSize.HasValue);
 
-        RuleFor(x => x.SortBy)
+        RuleFor(x => x.QueryParameters.SortBy)
             .IsInEnum()
             .WithMessage("SortBy is invalid.");
 
-        RuleFor(x => x.SortDirection)
+        RuleFor(x => x.QueryParameters.SortDirection)
             .IsInEnum()
             .WithMessage("SortDirection is invalid.");
 
-        RuleFor(x => x.MinRating)
+        RuleFor(x => x.QueryParameters.MinRating)
             .InclusiveBetween(1, 5)
             .WithMessage("MinRating must be between 1 and 5.")
-            .When(x => x.MinRating.HasValue);
+            .When(x => x.QueryParameters.MinRating.HasValue);
 
-        RuleFor(x => x.MaxRating)
+        RuleFor(x => x.QueryParameters.MaxRating)
             .InclusiveBetween(1, 5)
             .WithMessage("MaxRating must be between 1 and 5.")
-            .When(x => x.MaxRating.HasValue);
+            .When(x => x.QueryParameters.MaxRating.HasValue);
 
         RuleFor(x => x)
-            .Must(x => !x.MinRating.HasValue || !x.MaxRating.HasValue || x.MinRating <= x.MaxRating)
+            .Must(x => !x.QueryParameters.MinRating.HasValue || !x.QueryParameters.MaxRating.HasValue || x.QueryParameters.MinRating <= x.QueryParameters.MaxRating)
             .WithMessage("MinRating cannot be greater than MaxRating.");
     }
 }

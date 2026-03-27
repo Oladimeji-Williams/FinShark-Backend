@@ -1,7 +1,7 @@
 using FinShark.Application.Stocks.Commands.AddStockToPortfolio;
+using FinShark.Application.Common;
 using FinShark.Domain.Entities;
 using FinShark.Domain.Exceptions;
-using FinShark.Domain.Interfaces;
 using FinShark.Domain.Repositories;
 using Moq;
 using Xunit;
@@ -19,7 +19,7 @@ public class AddStockToPortfolioBySymbolCommandHandlerTests
         var stock = new Stock(symbol, "Test Company", 10m) { Id = 1 };
         var stockRepositoryMock = new Mock<IStockRepository>();
         var portfolioRepositoryMock = new Mock<IPortfolioRepository>();
-        var fmpServiceMock = new Mock<IFMPService>();
+        var fmpServiceMock = new Mock<IFmpService>();
         var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<AddStockToPortfolioBySymbolCommandHandler>>();
 
         stockRepositoryMock.Setup(r => r.GetBySymbolAsync(symbol, It.IsAny<CancellationToken>())).ReturnsAsync(stock);
@@ -51,7 +51,7 @@ public class AddStockToPortfolioBySymbolCommandHandlerTests
 
         var stockRepositoryMock = new Mock<IStockRepository>();
         var portfolioRepositoryMock = new Mock<IPortfolioRepository>();
-        var fmpServiceMock = new Mock<IFMPService>();
+        var fmpServiceMock = new Mock<IFmpService>();
         var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<AddStockToPortfolioBySymbolCommandHandler>>();
 
         stockRepositoryMock.SetupSequence(r => r.GetBySymbolAsync(symbol, It.IsAny<CancellationToken>()))
@@ -87,7 +87,7 @@ public class AddStockToPortfolioBySymbolCommandHandlerTests
         var symbol = "MISSING";
         var stockRepositoryMock = new Mock<IStockRepository>();
         var portfolioRepositoryMock = new Mock<IPortfolioRepository>();
-        var fmpServiceMock = new Mock<IFMPService>();
+        var fmpServiceMock = new Mock<IFmpService>();
         var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<AddStockToPortfolioBySymbolCommandHandler>>();
 
         stockRepositoryMock.Setup(r => r.GetBySymbolAsync(symbol, It.IsAny<CancellationToken>())).ReturnsAsync((Stock?)null);

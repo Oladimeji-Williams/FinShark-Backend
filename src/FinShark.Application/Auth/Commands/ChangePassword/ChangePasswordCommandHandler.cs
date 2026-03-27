@@ -1,6 +1,7 @@
 using FinShark.Application.Auth.Commands.ChangePassword;
 using FinShark.Application.Auth.Services;
 using FinShark.Application.Dtos;
+using FinShark.Application.Mappers;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -18,8 +19,7 @@ public sealed class ChangePasswordCommandHandler(
     {
         try
         {
-            var changePasswordRequest = new ChangePasswordRequestDto(request.CurrentPassword, request.NewPassword);
-            var result = await authService.ChangePasswordAsync(request.UserId, changePasswordRequest);
+            var result = await authService.ChangePasswordAsync(request.UserId, AuthMapper.ToRequest(request));
 
             if (result.Success)
             {

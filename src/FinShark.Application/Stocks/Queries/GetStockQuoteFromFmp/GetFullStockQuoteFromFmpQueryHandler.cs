@@ -1,7 +1,7 @@
 using FinShark.Application.Dtos;
+using FinShark.Application.Common;
 using FinShark.Application.Mappers;
 using FinShark.Domain.Exceptions;
-using FinShark.Domain.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -9,10 +9,10 @@ namespace FinShark.Application.Stocks.Queries.GetStockQuoteFromFmp;
 
 public sealed class GetFullStockQuoteFromFmpQueryHandler : IRequestHandler<GetFullStockQuoteFromFmpQuery, GetFullStockQuoteResponseDto>
 {
-    private readonly IFMPService _fmpService;
+    private readonly IFmpService _fmpService;
     private readonly ILogger<GetFullStockQuoteFromFmpQueryHandler> _logger;
 
-    public GetFullStockQuoteFromFmpQueryHandler(IFMPService fmpService, ILogger<GetFullStockQuoteFromFmpQueryHandler> logger)
+    public GetFullStockQuoteFromFmpQueryHandler(IFmpService fmpService, ILogger<GetFullStockQuoteFromFmpQueryHandler> logger)
     {
         _fmpService = fmpService ?? throw new ArgumentNullException(nameof(fmpService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

@@ -1,7 +1,7 @@
 using MediatR;
 using FinShark.Application.Dtos;
-using FinShark.Application.Mappers;
 using FinShark.Application.Common;
+using FinShark.Application.Mappers;
 using FinShark.Domain.Repositories;
 using FinShark.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -33,26 +33,15 @@ public sealed class GetCommentsByStockIdQueryHandler : IRequestHandler<GetCommen
         if (stock == null)
             throw new StockNotFoundException($"Stock with ID {request.StockId} not found");
 
-        // Get comments
-        var comments = await _commentRepository.GetByStockIdAsync(
-            request.StockId,
-            request.PageNumber,
-            request.PageSize,
-            request.StockSymbol,
-            request.MinRating,
-            request.MaxRating,
-            request.TitleContains,
-            request.ContentContains,
-            request.SortBy,
-            request.SortDirection,
-            cancellationToken);
+        var queryParameters = CommentQueryParametersMapper.ToDomain(request.QueryParameters, request.StockId);
+        var comments = await _commentRepository.GetAllAsync(queryParameters, cancellationToken);
 
         var commentDtos = CommentMapper.ToDtoList(comments).ToList();
-        var isPaged = request.PageNumber.HasValue || request.PageSize.HasValue;
+        var isPaged = request.QueryParameters.PageNumber.HasValue || request.QueryParameters.PageSize.HasValue;
         var totalCount = isPaged
-            ? await _commentRepository.GetCountByStockIdAsync(request.StockId, cancellationToken)
+            ? await _commentRepository.GetCountAsync(queryParameters, cancellationToken)
             : commentDtos.Count;
-        var pagination = PaginationHelper.Build(totalCount, request.PageNumber, request.PageSize);
+        var pagination = PaginationHelper.Build(totalCount, request.QueryParameters.PageNumber, request.QueryParameters.PageSize);
 
         _logger.LogInformation("Retrieved {CommentCount} comments for stock {StockId}", commentDtos.Count, request.StockId);
 

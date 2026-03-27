@@ -2,9 +2,9 @@ using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using FinShark.Application.Common;
 using FinShark.Domain.Entities;
 using FinShark.Domain.Exceptions;
-using FinShark.Domain.Interfaces;
 using FinShark.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -29,14 +29,14 @@ public sealed class StockQuoteFromFmpIntegrationTests : IClassFixture<CustomWebA
         {
             builder.ConfigureServices(services =>
             {
-                // Remove existing IFMPService registration and replace with mock.
-                var descriptor = services.SingleOrDefault(sd => sd.ServiceType == typeof(IFMPService));
+                // Remove existing IFmpService registration and replace with mock.
+                var descriptor = services.SingleOrDefault(sd => sd.ServiceType == typeof(IFmpService));
                 if (descriptor != null)
                 {
                     services.Remove(descriptor);
                 }
 
-                var mockFmpService = new Mock<IFMPService>(MockBehavior.Strict);
+                var mockFmpService = new Mock<IFmpService>(MockBehavior.Strict);
                 mockFmpService.Setup(s => s.GetStockQuoteAsync("AAPL", It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new Stock("AAPL", "Apple Inc.", 150.25m) { Id = 999 });
 
@@ -131,13 +131,13 @@ public sealed class StockQuoteFromFmpIntegrationTests : IClassFixture<CustomWebA
         {
             builder.ConfigureServices(services =>
             {
-                var descriptor = services.SingleOrDefault(sd => sd.ServiceType == typeof(IFMPService));
+                var descriptor = services.SingleOrDefault(sd => sd.ServiceType == typeof(IFmpService));
                 if (descriptor != null)
                 {
                     services.Remove(descriptor);
                 }
 
-                var mockFmpService = new Mock<IFMPService>(MockBehavior.Strict);
+                var mockFmpService = new Mock<IFmpService>(MockBehavior.Strict);
                 mockFmpService.Setup(s => s.GetStockQuoteAsync("MA", It.IsAny<CancellationToken>()))
                     .ThrowsAsync(new FMPServiceException("Access to FMP is forbidden. Verify your API key and account permissions.", 403, "Try a different symbol or verify your FMP quota."));
 

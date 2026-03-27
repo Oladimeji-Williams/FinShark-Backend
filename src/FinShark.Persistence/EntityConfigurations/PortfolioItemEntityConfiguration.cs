@@ -23,7 +23,7 @@ public static class PortfolioItemEntityConfiguration
                 .IsRequired()
                 .HasComment("Reference to Stock entity");
 
-            entity.Property<DateTime>("Created")
+            entity.Property(e => e.Created)
                 .HasDefaultValueSql("GETUTCDATE()")
                 .HasComment("When this stock was added to user portfolio");
 
@@ -35,7 +35,7 @@ public static class PortfolioItemEntityConfiguration
                 .HasDefaultValue(false)
                 .HasComment("Soft delete flag for portfolio item");
 
-            entity.Property<DateTime?>("Modified")
+            entity.Property(e => e.Modified)
                 .HasComment("When this stock portfolio item was modified");
 
             entity.Property<string>("ModifiedBy")

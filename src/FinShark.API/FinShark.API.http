@@ -1,6 +1,149 @@
-@FinShark.API_HostAddress = http://localhost:5192
+@baseUrl = https://localhost:7235
+@email = user@example.com
+@password = Password123!
+@authToken = replace-with-jwt
+@stockId = 1
+@commentId = 1
 
-GET {{FinShark.API_HostAddress}}/weatherforecast/
+### Health
+GET {{baseUrl}}/api/health
 Accept: application/json
 
-###
+### Register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "userName": "sampleuser",
+  "firstName": "Sample",
+  "lastName": "User"
+}
+
+### Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Get Current Profile
+GET {{baseUrl}}/api/auth/profile
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Get Current Identity
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Change Password
+POST {{baseUrl}}/api/auth/change-password
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "currentPassword": "{{password}}",
+  "newPassword": "NewPassword123!"
+}
+
+### List Stocks
+GET {{baseUrl}}/api/stocks?pageNumber=1&pageSize=10
+Accept: application/json
+
+### Create Stock
+POST {{baseUrl}}/api/stocks
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "symbol": "AAPL",
+  "companyName": "Apple Inc.",
+  "currentPrice": 250.50,
+  "sector": "Technology",
+  "marketCap": 2500000000000
+}
+
+### Get Stock
+GET {{baseUrl}}/api/stocks/{{stockId}}
+Accept: application/json
+
+### Get FMP Quote
+GET {{baseUrl}}/api/stocks/quote/AAPL
+Accept: application/json
+
+### Get FMP Full Profile
+GET {{baseUrl}}/api/stocks/quote/full/AAPL
+Accept: application/json
+
+### Update Stock
+PATCH {{baseUrl}}/api/stocks/{{stockId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "currentPrice": 275.10,
+  "marketCap": 2550000000000
+}
+
+### Soft Delete Stock
+DELETE {{baseUrl}}/api/stocks/{{stockId}}
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### List Comments
+GET {{baseUrl}}/api/comments?pageNumber=1&pageSize=10&sortBy=created&sortDirection=desc
+Accept: application/json
+
+### Get Comments By Stock
+GET {{baseUrl}}/api/stocks/{{stockId}}/comments?pageNumber=1&pageSize=10
+Accept: application/json
+
+### Create Comment
+POST {{baseUrl}}/api/stocks/{{stockId}}/comments
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Strong quarter",
+  "content": "Margins held up well and the forward guidance still looks solid.",
+  "rating": 5
+}
+
+### Update Comment
+PATCH {{baseUrl}}/api/comments/{{commentId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Updated view",
+  "rating": 4
+}
+
+### Delete Comment
+DELETE {{baseUrl}}/api/comments/{{commentId}}
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Get Portfolio
+GET {{baseUrl}}/api/portfolio
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Add To Portfolio By Stock ID
+POST {{baseUrl}}/api/portfolio/{{stockId}}
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Add To Portfolio By Symbol
+POST {{baseUrl}}/api/portfolio/symbol/AAPL
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+### Remove From Portfolio
+DELETE {{baseUrl}}/api/portfolio/{{stockId}}
+Authorization: Bearer {{authToken}}
+Accept: application/json

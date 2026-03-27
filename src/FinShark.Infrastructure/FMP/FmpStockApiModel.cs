@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 
-namespace FinShark.Application.Dtos;
+namespace FinShark.Infrastructure.FMP;
 
-public sealed class FMPStock
+internal sealed class FmpStockApiModel
 {
     [JsonPropertyName("symbol")] public string Symbol { get; set; } = string.Empty;
     [JsonPropertyName("price")] public double Price { get; set; }

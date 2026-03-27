@@ -4,27 +4,27 @@ namespace FinShark.API.Extensions;
 
 public static class ClaimsPrincipalExtensions
 {
-    public static string? GetUserId(this ClaimsPrincipal principal)
+    public static string? GetUserId(this ClaimsPrincipal claimsPrincipal)
     {
-        if (principal is null) return null;
-        return principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (claimsPrincipal is null) return null;
+        return claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
     }
 
-    public static string? GetUserName(this ClaimsPrincipal principal)
+    public static string? GetUserName(this ClaimsPrincipal claimsPrincipal)
     {
-        if (principal is null) return null;
-        return principal.FindFirstValue(ClaimTypes.Name);
+        if (claimsPrincipal is null) return null;
+        return claimsPrincipal.FindFirstValue(ClaimTypes.Name);
     }
 
-    public static string? GetFirstName(this ClaimsPrincipal principal)
+    public static string? GetFirstName(this ClaimsPrincipal claimsPrincipal)
     {
-        if (principal is null) return null;
-        return principal.FindFirstValue(ClaimTypes.GivenName);
+        if (claimsPrincipal is null) return null;
+        return claimsPrincipal.FindFirstValue(ClaimTypes.GivenName);
     }
 
-    public static string? GetLastName(this ClaimsPrincipal principal)
+    public static string? GetLastName(this ClaimsPrincipal claimsPrincipal)
     {
-        if (principal is null) return null;
-        return principal.FindFirstValue(ClaimTypes.Surname);
+        if (claimsPrincipal is null) return null;
+        return claimsPrincipal.FindFirstValue(ClaimTypes.Surname);
     }
 }

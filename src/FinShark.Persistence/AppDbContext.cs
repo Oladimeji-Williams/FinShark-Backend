@@ -9,7 +9,7 @@ namespace FinShark.Persistence;
 /// <summary>
 /// Application DbContext for Entity Framework Core
 /// Manages database operations and orchestrates entity configurations
-/// Automatically handles audit timestamps through shadow properties
+/// Configures identity, audit metadata, and soft-delete behavior
 /// </summary>
 public sealed class AppDbContext : IdentityDbContext<ApplicationUser>
 {
@@ -26,7 +26,7 @@ public sealed class AppDbContext : IdentityDbContext<ApplicationUser>
     {
         base.OnModelCreating(modelBuilder);
 
-        // Configure audit shadow properties on all BaseEntity derived types
+        // Add actor-tracking metadata to audited entities.
         foreach (var entityType in modelBuilder.Model.GetEntityTypes()
             .Where(t => typeof(BaseEntity).IsAssignableFrom(t.ClrType)))
         {

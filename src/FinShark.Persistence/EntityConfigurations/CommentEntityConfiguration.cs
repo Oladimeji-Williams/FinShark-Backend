@@ -51,11 +51,11 @@ public static class CommentEntityConfiguration
                 .HasComment("Rating from 1 to 5");
 
             // Audit shadow columns
-            entity.Property<DateTime>("Created")
+            entity.Property(e => e.Created)
                 .HasDefaultValueSql("GETUTCDATE()")
                 .HasComment("Record creation timestamp");
 
-            entity.Property<DateTime?>("Modified")
+            entity.Property(e => e.Modified)
                 .HasComment("Record last update timestamp");
 
             entity.Property<bool>(nameof(Comment.IsDeleted))
@@ -90,7 +90,7 @@ public static class CommentEntityConfiguration
             entity.HasIndex(e => e.UserId)
                 .HasDatabaseName("IX_Comment_UserId");
 
-            entity.HasIndex("Created")
+            entity.HasIndex(e => e.Created)
                 .HasDatabaseName("IX_Comment_Created");
 
             // Check constraints

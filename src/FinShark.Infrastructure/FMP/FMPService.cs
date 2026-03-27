@@ -1,8 +1,7 @@
+using FinShark.Application.Common;
 using FinShark.Domain.Entities;
 using FinShark.Domain.Exceptions;
-using FinShark.Domain.Interfaces;
 using FinShark.Domain.ValueObjects;
-using FinShark.Application.Dtos;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Http;
@@ -13,7 +12,7 @@ namespace FinShark.Infrastructure.FMP;
 /// <summary>
 /// Connects to Financial Modeling Prep API to retrieve stock quote/profile data.
 /// </summary>
-public sealed class FMPService : IFMPService
+public sealed class FMPService : IFmpService
 {
     private readonly HttpClient _client;
     private readonly FmpSettings _settings;
@@ -91,7 +90,7 @@ public sealed class FMPService : IFMPService
             throw new FMPServiceException(message, (int)response.StatusCode, suggestion);
         }
 
-        var content = await response.Content.ReadFromJsonAsync<List<FMPStock>>(cancellationToken: cancellationToken);
+        var content = await response.Content.ReadFromJsonAsync<List<FmpStockApiModel>>(cancellationToken: cancellationToken);
         if (content is null || content.Count == 0)
         {
             _logger.LogWarning("FMP API returned empty profile list for symbol {Symbol}", symbolTrim);

@@ -1,6 +1,5 @@
-using FinShark.Domain.Interfaces;
+using FinShark.Application.Common;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mail;
 
