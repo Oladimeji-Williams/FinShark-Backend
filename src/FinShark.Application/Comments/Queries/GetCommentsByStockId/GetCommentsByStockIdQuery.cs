@@ -1,4 +1,4 @@
-using MediatR;
+using MediatorFlow.Core.Contracts;
 using FinShark.Application.Dtos;
 
 namespace FinShark.Application.Comments.Queries.GetCommentsByStockId;

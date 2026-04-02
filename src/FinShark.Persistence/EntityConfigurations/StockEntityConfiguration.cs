@@ -23,7 +23,7 @@ public static class StockEntityConfiguration
             // Symbol Column
             entity.Property(e => e.Symbol)
                 .IsRequired()
-                .HasMaxLength(10)
+                .HasMaxLength(50)
                 .HasComment("Stock ticker symbol (e.g., AAPL, MSFT)");
 
             // Company Name Column
@@ -36,6 +36,16 @@ public static class StockEntityConfiguration
             entity.Property(e => e.CurrentPrice)
                 .HasPrecision(18, 2)
                 .HasComment("Stock price with 2 decimal places");
+
+            // Purchase Price Column
+            entity.Property(e => e.Purchase)
+                .HasPrecision(18, 2)
+                .HasComment("Purchase price with 2 decimal places");
+
+            // Last Dividend Column
+            entity.Property(e => e.LastDiv)
+                .HasPrecision(18, 2)
+                .HasComment("Last dividend amount with 2 decimal places");
 
             // Sector Column (stored in existing Sector column for compatibility)
             entity.Property(e => e.Sector)

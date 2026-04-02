@@ -30,7 +30,7 @@ public class Stock : BaseEntity
         LastDiv = lastDiv;
     }
 
-    public void Update(string? symbol = null, string? companyName = null, decimal? currentPrice = null, 
+    public void Update(string? symbol = null, string? companyName = null, decimal? currentPrice = null,
         SectorType? sector = null, decimal? marketCap = null)
     {
         if (!string.IsNullOrWhiteSpace(symbol)) Symbol = symbol;

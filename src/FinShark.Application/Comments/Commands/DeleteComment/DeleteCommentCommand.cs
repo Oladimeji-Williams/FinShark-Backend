@@ -1,4 +1,4 @@
-using MediatR;
+using MediatorFlow.Core.Contracts;
 
 namespace FinShark.Application.Comments.Commands.DeleteComment;
 

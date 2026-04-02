@@ -21,7 +21,7 @@ FinShark is a .NET 10 backend for stock discovery, user authentication, portfoli
 - `FinShark.Infrastructure`: SMTP and FMP integrations
 - `FinShark.Tests`: unit and integration tests
 
-Controllers are intentionally thin. They delegate to MediatR commands and queries, and the application layer performs mapping through explicit mapper classes rather than AutoMapper.
+Controllers are intentionally thin. They delegate to MediatorFlow commands and queries, and the application layer performs mapping through explicit mapper classes rather than AutoMapper.
 
 ## Quick Start
 

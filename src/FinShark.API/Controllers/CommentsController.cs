@@ -6,7 +6,7 @@ using FinShark.Application.Comments.Queries.GetAllComments;
 using FinShark.Application.Comments.Queries.GetCommentById;
 using FinShark.Application.Comments.Queries.GetCommentsByStockId;
 using FinShark.Application.Dtos;
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

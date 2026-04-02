@@ -1,5 +1,5 @@
 using FinShark.Application.Common;
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace FinShark.Application.Auth.Commands.TestSmtp;

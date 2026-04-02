@@ -12,7 +12,7 @@ public sealed class Comment : BaseEntity
     public string Title { get; set; } = null!;
     public string Content { get; set; } = null!;
     public Rating Rating { get; private set; }
-    
+
     // Navigation properties
     public ApplicationUser User { get; set; } = null!;
     public Stock Stock { get; set; } = null!;

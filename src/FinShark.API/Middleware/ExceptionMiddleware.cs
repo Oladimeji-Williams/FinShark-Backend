@@ -1,7 +1,6 @@
 using FinShark.Application.Dtos;
 using FinShark.Domain.Exceptions;
 using FluentValidation;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Net;

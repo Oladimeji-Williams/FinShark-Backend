@@ -1,4 +1,3 @@
-using FinShark.Application.Dtos;
 using FinShark.Application.Stocks.Queries.GetStocks;
 using FluentValidation;
 
@@ -31,8 +30,8 @@ public sealed class GetStocksQueryValidator : AbstractValidator<GetStocksQuery>
                 .When(x => x.QueryParameters.PageSize.HasValue);
 
             RuleFor(x => x.QueryParameters.Symbol)
-                .MaximumLength(10)
-                .WithMessage("Symbol cannot exceed 10 characters.")
+                .MaximumLength(20)
+                .WithMessage("Symbol cannot exceed 20 characters.")
                 .When(x => !string.IsNullOrWhiteSpace(x.QueryParameters.Symbol));
 
             RuleFor(x => x.QueryParameters.CompanyName)

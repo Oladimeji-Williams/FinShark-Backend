@@ -32,7 +32,7 @@ Controllers should:
 
 - bind DTOs
 - extract auth context when needed
-- send commands or queries through MediatR
+- send commands or queries through MediatorFlow
 - return `ApiResponse<T>`
 
 Controllers should not:

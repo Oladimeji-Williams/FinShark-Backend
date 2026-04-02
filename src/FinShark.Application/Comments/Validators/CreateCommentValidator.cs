@@ -1,5 +1,4 @@
 using FinShark.Application.Comments.Commands.CreateComment;
-using FinShark.Domain.ValueObjects;
 using FluentValidation;
 
 namespace FinShark.Application.Comments.Validators;

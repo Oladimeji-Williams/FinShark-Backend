@@ -11,7 +11,7 @@ using FinShark.Application.Auth.Queries.GetAllUsers;
 using FinShark.Application.Auth.Queries.GetCurrentUserIdentity;
 using FinShark.Application.Auth.Queries.GetUserProfile;
 using FinShark.Application.Dtos;
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

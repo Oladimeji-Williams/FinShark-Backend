@@ -71,7 +71,7 @@ public sealed class SmtpEmailService : IEmailService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error sending email to {Email}" , to);
+            _logger.LogError(ex, "Unexpected error sending email to {Email}", to);
             throw;
         }
     }

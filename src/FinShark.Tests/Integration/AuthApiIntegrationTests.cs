@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.WebUtilities;
 using FinShark.Domain.Entities;
 using FinShark.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

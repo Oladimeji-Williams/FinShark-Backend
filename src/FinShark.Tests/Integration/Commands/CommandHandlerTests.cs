@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using FinShark.Application.Dtos;
 using FinShark.Application.Stocks.Commands.CreateStock;
 using FinShark.Application.Stocks.Queries.GetStocks;
-using FinShark.Application.Mappers;
 using FinShark.Domain.Entities;
 using FinShark.Domain.Repositories;
 using FinShark.Persistence;
@@ -12,7 +11,6 @@ using FinShark.Domain.ValueObjects;
 using FinShark.Domain.Queries;
 using FinShark.Domain.Exceptions;
 using Xunit;
-using MediatR;
 
 namespace FinShark.Tests.Integration.Commands;
 
@@ -231,5 +229,6 @@ public class MockLogger<T> : Microsoft.Extensions.Logging.ILogger<T>
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
     public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => false;
     public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId,
-        TState state, Exception? exception, Func<TState, Exception?, string> formatter) { }
+        TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    { }
 }

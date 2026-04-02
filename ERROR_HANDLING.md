@@ -51,7 +51,7 @@ Typical outcomes:
 Validation enters through:
 
 - model binding and JSON conversion
-- FluentValidation MediatR pipeline behavior
+- FluentValidation MediatorFlow pipeline behavior
 
 Examples:
 

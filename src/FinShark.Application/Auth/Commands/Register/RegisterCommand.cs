@@ -1,5 +1,6 @@
 using FinShark.Application.Dtos;
-using MediatR;
+using MediatorFlow.Core.Contracts;
+
 
 namespace FinShark.Application.Auth.Commands.Register;
 

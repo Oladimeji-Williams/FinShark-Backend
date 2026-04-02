@@ -1,13 +1,14 @@
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using FinShark.Application.Dtos;
 using FinShark.Application.Common;
 using FinShark.Application.Mappers;
 using FinShark.Domain.Repositories;
 using FinShark.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
-using FinShark.Application.Comments.Queries.GetCommentsByStockId;
+
 
 namespace FinShark.Application.Comments.Queries.GetCommentsByStockId;
+
 public sealed class GetCommentsByStockIdQueryHandler : IRequestHandler<GetCommentsByStockIdQuery, PagedResult<GetCommentResponseDto>>
 {
     private readonly ICommentRepository _commentRepository;

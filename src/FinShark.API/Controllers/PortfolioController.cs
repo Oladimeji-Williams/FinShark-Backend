@@ -3,7 +3,7 @@ using FinShark.Application.Dtos;
 using FinShark.Application.Stocks.Commands.AddStockToPortfolio;
 using FinShark.Application.Stocks.Commands.RemoveStockFromPortfolio;
 using FinShark.Application.Stocks.Queries.GetPortfolioStocks;
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -30,7 +30,7 @@ public sealed class PortfolioController : ApiControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<IEnumerable<GetStockResponseDto>>>> GetPortfolio(CancellationToken cancellationToken)
-    { 
+    {
         var userId = User.GetUserId();
         if (string.IsNullOrWhiteSpace(userId))
         {
