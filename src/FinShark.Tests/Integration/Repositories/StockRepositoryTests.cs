@@ -1,7 +1,5 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using FinShark.Application.Dtos;
-using FinShark.Application.Stocks.Commands.CreateStock;
 using FinShark.Domain.Entities;
 using FinShark.Domain.Repositories;
 using FinShark.Persistence;
@@ -149,9 +147,9 @@ public class StockRepositoryTests : IAsyncLifetime
     public async Task AddAsync_WithNewStock_ShouldPersist()
     {
         // Arrange
-        var stock = new Stock("AAPL", "Apple Inc.", 150.50m) 
-        { 
-            Sector = SectorType.Technology 
+        var stock = new Stock("AAPL", "Apple Inc.", 150.50m)
+        {
+            Sector = SectorType.Technology
         };
 
         // Act
@@ -217,6 +215,7 @@ public class MockLogger<T> : Microsoft.Extensions.Logging.ILogger<T>
 {
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
     public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => false;
-    public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, 
-        TState state, Exception? exception, Func<TState, Exception?, string> formatter) { }
+    public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId,
+        TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    { }
 }

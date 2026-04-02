@@ -2,7 +2,7 @@ using FinShark.Application.Dtos;
 using FinShark.Application.Common;
 using FinShark.Application.Mappers;
 using FinShark.Domain.Exceptions;
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace FinShark.Application.Stocks.Queries.GetStockQuoteFromFmp;

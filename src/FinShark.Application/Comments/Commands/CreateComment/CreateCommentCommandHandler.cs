@@ -1,5 +1,4 @@
-using MediatR;
-using FinShark.Domain.Entities;
+using MediatorFlow.Core.Abstractions;
 using FinShark.Domain.Repositories;
 using FinShark.Domain.Exceptions;
 using Microsoft.Extensions.Logging;

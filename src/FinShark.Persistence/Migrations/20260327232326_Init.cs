@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -67,10 +67,10 @@ namespace FinShark.Persistence.Migrations
                     LastDiv = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Sector = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, comment: "Sector sector"),
                     MarketCap = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false, comment: "Market capitalization"),
-                    Created = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()", comment: "Record creation timestamp"),
                     CreatedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "Record creator user id"),
-                    Modified = table.Column<DateTime>(type: "datetime2", nullable: true, comment: "Record last update timestamp"),
                     ModifiedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "Record modifier user id"),
+                    Created = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()", comment: "Record creation timestamp"),
+                    Modified = table.Column<DateTime>(type: "datetime2", nullable: true, comment: "Record last update timestamp"),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false, comment: "Soft delete flag")
                 },
                 constraints: table =>
@@ -195,10 +195,10 @@ namespace FinShark.Persistence.Migrations
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false, comment: "Comment title"),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false, comment: "Comment content"),
                     Rating = table.Column<int>(type: "int", nullable: false, comment: "Rating from 1 to 5"),
-                    Created = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()", comment: "Record creation timestamp"),
                     CreatedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "Record creator user id"),
-                    Modified = table.Column<DateTime>(type: "datetime2", nullable: true, comment: "Record last update timestamp"),
                     ModifiedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "Record modifier user id"),
+                    Created = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()", comment: "Record creation timestamp"),
+                    Modified = table.Column<DateTime>(type: "datetime2", nullable: true, comment: "Record last update timestamp"),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false, comment: "Soft delete flag")
                 },
                 constraints: table =>
@@ -227,10 +227,10 @@ namespace FinShark.Persistence.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false, comment: "Reference to ApplicationUser"),
                     StockId = table.Column<int>(type: "int", nullable: false, comment: "Reference to Stock entity"),
-                    Created = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()", comment: "When this stock was added to user portfolio"),
                     CreatedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "User who added this portfolio item"),
-                    Modified = table.Column<DateTime>(type: "datetime2", nullable: true, comment: "When this stock portfolio item was modified"),
                     ModifiedBy = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true, comment: "User who modified this portfolio item"),
+                    Created = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()", comment: "When this stock was added to user portfolio"),
+                    Modified = table.Column<DateTime>(type: "datetime2", nullable: true, comment: "When this stock portfolio item was modified"),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false, comment: "Soft delete flag for portfolio item")
                 },
                 constraints: table =>

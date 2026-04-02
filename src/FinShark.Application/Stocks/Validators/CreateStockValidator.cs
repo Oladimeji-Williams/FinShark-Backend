@@ -14,8 +14,8 @@ public sealed class CreateStockValidator : AbstractValidator<CreateStockCommand>
         RuleFor(x => x.Symbol)
             .NotEmpty()
                 .WithMessage("Stock symbol is required.")
-            .MaximumLength(10)
-                .WithMessage("Stock symbol cannot exceed 10 characters.")
+            .MaximumLength(20)
+                .WithMessage("Stock symbol cannot exceed 20 characters.")
             .Matches(@"^[A-Z0-9.]+$")
                 .WithMessage("Stock symbol must contain only uppercase letters, numbers, and dots (e.g., AB.C).");
 

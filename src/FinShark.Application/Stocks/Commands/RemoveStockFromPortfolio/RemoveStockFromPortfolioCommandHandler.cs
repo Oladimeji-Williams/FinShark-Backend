@@ -1,5 +1,5 @@
 using FinShark.Domain.Repositories;
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace FinShark.Application.Stocks.Commands.RemoveStockFromPortfolio;

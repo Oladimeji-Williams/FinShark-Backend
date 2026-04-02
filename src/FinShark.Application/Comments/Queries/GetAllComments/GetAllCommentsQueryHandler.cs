@@ -1,4 +1,4 @@
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using FinShark.Application.Dtos;
 using FinShark.Application.Common;
 using FinShark.Application.Mappers;
@@ -6,6 +6,7 @@ using FinShark.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace FinShark.Application.Comments.Queries.GetAllComments;
+
 public sealed class GetAllCommentsQueryHandler : IRequestHandler<GetAllCommentsQuery, PagedResult<GetCommentResponseDto>>
 {
     private readonly ICommentRepository _commentRepository;

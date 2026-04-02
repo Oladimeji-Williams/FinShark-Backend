@@ -99,6 +99,16 @@ public static class PipelineConfiguration
         // Map Controllers
         app.MapControllers();
 
+        // Catch-all route for unknown API endpoints - returns proper JSON 404 instead of HTML
+        app.MapFallback("/api/{**path}", (string path, ILogger<Program> logger) =>
+        {
+            logger.LogWarning("Unknown API endpoint requested: /api/{Path}", path);
+            var response = FinShark.Application.Dtos.ApiResponse<object>.FailureResponse(
+                "Endpoint not found",
+                new[] { $"The API endpoint '/api/{path}' does not exist." });
+            return Results.NotFound(response);
+        });
+
         return app;
     }
 }

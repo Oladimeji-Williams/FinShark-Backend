@@ -1,4 +1,4 @@
-using MediatR;
+using MediatorFlow.Core.Contracts;
 using FinShark.Application.Dtos;
 using FinShark.Domain.ValueObjects;
 

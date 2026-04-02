@@ -99,8 +99,8 @@ public sealed class DataSeeder
 
             var stocks = new List<Stock>
             {
-                new Stock("AAPL", "Apple Inc.", 150.25m, purchase: 120.00m, lastDiv: 0.88m) 
-                { 
+                new Stock("AAPL", "Apple Inc.", 150.25m, purchase: 120.00m, lastDiv: 0.88m)
+                {
                     Sector = SectorType.Technology,
                     MarketCap = 2500000000000m
                 },

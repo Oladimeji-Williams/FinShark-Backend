@@ -12,7 +12,7 @@ Responsibilities:
 
 - expose HTTP endpoints
 - bind request DTOs
-- call MediatR
+- call MediatorFlow
 - return `ApiResponse<T>`
 - apply middleware, auth, CORS, and serialization rules
 
@@ -107,7 +107,7 @@ Rules:
 - commands mutate state
 - queries do not mutate state
 - handlers depend on repository or service abstractions
-- controllers talk to MediatR, not directly to repositories
+- controllers talk to MediatorFlow, not directly to repositories
 
 ## Manual Mapping Conventions
 
@@ -145,7 +145,7 @@ Typical write flow:
 
 1. Controller receives HTTP request
 2. Controller creates command or query
-3. MediatR dispatches to handler
+3. MediatorFlow dispatches to handler
 4. FluentValidation pipeline validates the request
 5. Handler calls repositories or service abstractions
 6. Manual mapper shapes response DTOs
@@ -156,7 +156,7 @@ Typical write flow:
 ### Validation
 
 - implemented with FluentValidation in the application layer
-- executed through MediatR pipeline behavior
+- executed through MediatorFlow pipeline behavior
 
 ### Error Handling
 

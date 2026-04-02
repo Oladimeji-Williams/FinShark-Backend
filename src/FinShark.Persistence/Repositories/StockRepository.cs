@@ -233,7 +233,7 @@ public sealed class StockRepository(
         {
             _logger.LogInformation("Fetching stock with symbol: {Symbol}", symbol);
             var stock = await _context.Stocks.FirstOrDefaultAsync(s => s.Symbol == symbol, cancellationToken);
-            
+
             if (stock is null)
             {
                 _logger.LogDebug("Stock with symbol {Symbol} not found", symbol);

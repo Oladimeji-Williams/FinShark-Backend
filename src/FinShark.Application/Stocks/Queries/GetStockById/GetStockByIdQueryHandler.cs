@@ -1,4 +1,4 @@
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using FinShark.Application.Dtos;
 using FinShark.Application.Mappers;
 using FinShark.Domain.Exceptions;

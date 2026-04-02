@@ -1,8 +1,7 @@
-using FinShark.Application.Auth.Commands.Register;
 using FinShark.Application.Auth.Services;
 using FinShark.Application.Dtos;
 using FinShark.Application.Mappers;
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace FinShark.Application.Auth.Commands.Register;

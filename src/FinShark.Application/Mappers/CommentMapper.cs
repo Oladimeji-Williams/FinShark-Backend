@@ -21,6 +21,7 @@ public static class CommentMapper
         {
             Id = comment.Id,
             StockId = comment.StockId,
+            UserId = comment.UserId,
             Title = comment.Title,
             Content = comment.Content,
             Rating = comment.Rating,

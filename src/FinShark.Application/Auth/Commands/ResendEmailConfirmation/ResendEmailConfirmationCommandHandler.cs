@@ -1,7 +1,6 @@
-using FinShark.Application.Auth.Commands.ResendEmailConfirmation;
 using FinShark.Application.Auth.Services;
 using FinShark.Application.Dtos;
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace FinShark.Application.Auth.Commands.ResendEmailConfirmation;

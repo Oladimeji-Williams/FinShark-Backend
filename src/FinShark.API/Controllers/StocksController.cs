@@ -5,7 +5,7 @@ using FinShark.Application.Stocks.Commands.UpdateStock;
 using FinShark.Application.Stocks.Queries.GetStockById;
 using FinShark.Application.Stocks.Queries.GetStockQuoteFromFmp;
 using FinShark.Application.Stocks.Queries.GetStocks;
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,7 +14,7 @@ namespace FinShark.API.Controllers;
 /// <summary>
 /// Stocks API Controller
 /// Handles HTTP requests for stock operations
-/// Implements CQRS pattern through MediatR
+/// Implements CQRS pattern through MediatorFlow
 /// </summary>
 [Route("api/[controller]")]
 public sealed class StocksController : ApiControllerBase
@@ -69,7 +69,7 @@ public sealed class StocksController : ApiControllerBase
     {
         _logger.LogInformation("POST /api/stocks - Creating new stock: {Symbol}", createStockRequestDto.Symbol);
 
-        // Convert DTO to Command for MediatR
+        // Convert DTO to Command for MediatorFlow
         var command = new CreateStockCommand(
             createStockRequestDto.Symbol,
             createStockRequestDto.CompanyName,
@@ -164,7 +164,7 @@ public sealed class StocksController : ApiControllerBase
     {
         _logger.LogInformation("PATCH /api/stocks/{Id} - Updating stock with ID: {StockId}", id, id);
 
-        // Convert DTO to Command for MediatR
+        // Convert DTO to Command for MediatorFlow
         var command = new UpdateStockCommand(
             Id: id,
             Symbol: updateStockRequestDto.Symbol,

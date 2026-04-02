@@ -56,7 +56,7 @@ public class CreateStockValidatorTests
     {
         // Arrange
         var command = new CreateStockCommand(
-            "VERYLONGSYMBOL", // 14 characters, max is 10
+            "VERYLONGSYMBOLTHATEXCEEDS", // 25 characters, max is 20
             "Apple Inc.",
             150.50m);
 

@@ -16,7 +16,7 @@ public sealed class UpdateStockValidator : AbstractValidator<UpdateStockCommand>
 
         RuleFor(x => x.Symbol)
             .NotEmpty().WithMessage("Symbol is required")
-            .MaximumLength(10).WithMessage("Symbol must not exceed 10 characters")
+            .MaximumLength(20).WithMessage("Symbol must not exceed 20 characters")
             .Matches(@"^[A-Z0-9.]+$").WithMessage("Symbol must contain only uppercase letters, numbers, and dots (e.g., AB.C)")
             .When(x => x.Symbol != null);
 

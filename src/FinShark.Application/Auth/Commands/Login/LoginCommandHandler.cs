@@ -1,8 +1,7 @@
-using FinShark.Application.Auth.Commands.Login;
 using FinShark.Application.Auth.Services;
 using FinShark.Application.Dtos;
 using FinShark.Application.Mappers;
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace FinShark.Application.Auth.Commands.Login;
@@ -20,11 +19,7 @@ public sealed class LoginCommandHandler(
         {
             var result = await authService.LoginAsync(AuthMapper.ToRequest(request));
 
-            if (result.Success)
-            {
-                logger.LogInformation("User logged in successfully: {Email}", request.Email);
-            }
-            else
+            if (!result.Success)
             {
                 logger.LogWarning("User login failed for {Email}: {Message}", request.Email, result.Message);
             }

@@ -19,6 +19,11 @@ public sealed record GetCommentResponseDto
     public required int StockId { get; init; }
 
     /// <summary>
+    /// Foreign key reference to the User who created the comment
+    /// </summary>
+    public required string UserId { get; init; }
+
+    /// <summary>
     /// Comment title
     /// </summary>
     public required string Title { get; init; }

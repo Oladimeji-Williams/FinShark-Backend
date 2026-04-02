@@ -1,10 +1,10 @@
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using FinShark.Domain.Repositories;
 using FinShark.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
-using FinShark.Application.Comments.Commands.DeleteComment;
 
 namespace FinShark.Application.Comments.Commands.DeleteComment;
+
 public sealed class DeleteCommentCommandHandler : IRequestHandler<DeleteCommentCommand, bool>
 {
     private readonly ICommentRepository _commentRepository;

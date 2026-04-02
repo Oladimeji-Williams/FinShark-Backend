@@ -1,11 +1,12 @@
-using MediatR;
+using MediatorFlow.Core.Abstractions;
 using FinShark.Domain.Repositories;
 using FinShark.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
 using FinShark.Application.Mappers;
-using FinShark.Application.Comments.Commands.UpdateComment;
+
 
 namespace FinShark.Application.Comments.Commands.UpdateComment;
+
 public sealed class UpdateCommentCommandHandler : IRequestHandler<UpdateCommentCommand, bool>
 {
     private readonly ICommentRepository _commentRepository;

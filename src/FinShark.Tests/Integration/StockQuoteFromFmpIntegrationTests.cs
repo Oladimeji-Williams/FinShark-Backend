@@ -1,13 +1,9 @@
-using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using FinShark.Application.Common;
 using FinShark.Domain.Entities;
 using FinShark.Domain.Exceptions;
-using FinShark.Persistence;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Newtonsoft.Json;

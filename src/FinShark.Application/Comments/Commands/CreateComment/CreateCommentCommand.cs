@@ -1,4 +1,4 @@
-using MediatR;
+using MediatorFlow.Core.Contracts;
 using FinShark.Domain.ValueObjects;
 
 namespace FinShark.Application.Comments.Commands.CreateComment;
